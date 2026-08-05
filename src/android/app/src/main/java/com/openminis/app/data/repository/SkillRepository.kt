@@ -1150,8 +1150,8 @@ class SkillRepository(private val context: Context) {
     }
 
     /**
-     * Install the pre-packaged work-assistant skills shipped in
-     * `assets/bundled-skills/*.zip` (ppt生成, 周报生成, 文章去AI味工具,
+     * Install the pre-packaged work-assistant skills shipped under
+     * `assets/bundled-skills/` (ppt生成, 周报生成, 文章去AI味工具,
      * 海报设计师). Each zip is imported via [importFromArchive] the same way
      * a user-imported skill archive is. Idempotent: a skill whose id already
      * exists is skipped, so users can delete/disable these and they won't be
