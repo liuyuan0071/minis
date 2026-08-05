@@ -71,9 +71,11 @@ android {
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
-        // Pin the NDK so local and CI builds use the identical toolchain
-        // (AGP 8.7.3's default; deterministic builds across machines).
-        ndkVersion = "27.0.12077973"
+        // Pin the NDK to a version pre-installed in the Gitee Go build
+        // environment (its SDK dir is read-only, so AGP can't auto-install).
+        // 27.3.13750724 was verified present on 2026-08-05; AGP 8.7 supports
+        // the NDK 27.x line.
+        ndkVersion = "27.3.13750724"
 
         externalNativeBuild {
             cmake {

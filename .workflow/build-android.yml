@@ -22,10 +22,8 @@ stages:
         commands:
           - echo "DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY" > .env
           - bash ./scripts/prepare_android_sandbox.sh || echo "沙箱资源准备失败（非阻断，聊天/技能功能不受影响）"
-          # Gitee Go 的 SDK 目录只读，无法自动安装 NDK；探测环境预装版本并适配
-          - echo "--- SDK 内容探测 ---"; ls /mnt/pipeline-tools/standard/android/sdk/ 2>/dev/null || echo "SDK 目录不存在"; echo "--- NDK 版本 ---"; ls /mnt/pipeline-tools/standard/android/sdk/ndk/ 2>/dev/null || echo "无 NDK 目录"; echo "--- CMake 版本 ---"; ls /mnt/pipeline-tools/standard/android/sdk/cmake/ 2>/dev/null || echo "无 cmake 目录"
-          - NDK_VER=$(ls /mnt/pipeline-tools/standard/android/sdk/ndk/ 2>/dev/null | head -1); if [ -n "$NDK_VER" ]; then sed -i "s/27\.0\.12077973/$NDK_VER/g" src/android/app/build.gradle.kts && echo "ndkVersion 已自动适配为: $NDK_VER"; else echo "未探测到 NDK，保留默认版本（可能失败）"; fi
-          - CMAKE_VER=$(ls /mnt/pipeline-tools/standard/android/sdk/cmake/ 2>/dev/null | head -1); if [ -n "$CMAKE_VER" ]; then sed -i "s/version = \"3\.22\.1\"/version = \"$CMAKE_VER\"/" src/android/app/build.gradle.kts && echo "cmake 已自动适配为: $CMAKE_VER"; else echo "未探测到 CMake，保留默认版本（可能失败）"; fi
+          # 环境 SDK 只读且无 CMake：下载官方 CMake 3.22.1 到可写目录，通过 cmake.dir 指定给 AGP
+          - mkdir -p $HOME/cmake; curl -fsSL --retry 3 -o $HOME/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-x86_64.tar.gz" && tar xzf $HOME/cmake.tar.gz -C $HOME/cmake --strip-components=1 && echo "cmake.dir=$HOME/cmake" >> src/android/local.properties && echo "CMake 3.22.1 就绪" || echo "CMake 准备失败（非阻断，构建可能报错）"
           - cd src/android
           - chmod +x gradlew
           - ./gradlew :app:assembleRelease --no-daemon --stacktrace
