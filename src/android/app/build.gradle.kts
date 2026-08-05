@@ -94,7 +94,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            // [T-gitee-go-build] R8 full minification disabled: on the Gitee Go
+            // build runner (2-core / 4Gi container) minifyReleaseWithR8 for this
+            // large Compose app OOMs / hits the job timeout and dies without
+            // producing an error log. Skipping it trades APK size (~2x) for a
+            // fast, deterministic release build; functionality is unaffected.
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
