@@ -24,23 +24,16 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y ninja-build && echo "ninja 就绪"
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK + NDK
         uses: android-actions/setup-android@v3
         with:
-          cmdline-tools-version: 11076708
-          accept-licenses: true
-
-      - name: Accept Android SDK licenses
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-
-      - name: Install NDK
-        run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.3.13750724" || echo "NDK 安装失败（非阻断）"
+          accept-android-sdk-licenses: true
+          packages: "platforms;android-36 build-tools;36.0.0 ndk;27.3.13750724"
 
       - name: Build APK
         working-directory: src/android
