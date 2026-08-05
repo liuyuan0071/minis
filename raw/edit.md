@@ -17,8 +17,7 @@ stages:
     commands:
     - echo "DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY" > .env
     - bash ./scripts/prepare_android_sandbox.sh || echo "沙箱资源准备失败（非阻断，聊天/技能功能不受影响）"
-    - apt-get update -y >/dev/null 2>&1 || true; apt-get install -y ninja-build cmake >/dev/null 2>&1 || echo "apt 安装 cmake/ninja 失败（非阻断）"
-    - mkdir -p $HOME/cmake; curl --http1.1 -fsSL --retry 3 -o $HOME/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-x86_64.tar.gz" && tar xzf $HOME/cmake.tar.gz -C $HOME/cmake --strip-components=1 && echo "cmake.dir=$HOME/cmake" >> src/android/local.properties && echo "CMake 3.22.1 就绪" || echo "CMake 下载失败，将使用系统 cmake/ninja"
+    - apt-get update -y >/dev/null 2>&1 || true; apt-get install -y ninja-build cmake >/dev/null 2>&1 && echo "apt cmake/ninja 就绪" || echo "apt 安装失败（非阻断）"
     - cd src/android
     - chmod +x gradlew
     - ./gradlew :app:assembleRelease --no-daemon --stacktrace
