@@ -1,11 +1,5 @@
 pluginManagement {
     repositories {
-        // [T-gitee-go-build] Aliyun mirrors first so builds on Gitee Go's
-        // China-based machines can resolve plugins/dependencies quickly;
-        // official repos remain as fallbacks.
-        maven("https://maven.aliyun.com/repository/gradle-plugin")
-        maven("https://maven.aliyun.com/repository/google")
-        maven("https://maven.aliyun.com/repository/central")
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -19,8 +13,6 @@ dependencyResolutionManagement {
     // build dies with "repository 'maven' was added by initialization script".
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        maven("https://maven.aliyun.com/repository/google")
-        maven("https://maven.aliyun.com/repository/central")
         google()
         mavenCentral()
     }
