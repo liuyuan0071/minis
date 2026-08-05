@@ -19,7 +19,9 @@ ALPINE_RELEASE="3.21.3"
 ALPINE_URL="https://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/releases/aarch64/alpine-minirootfs-${ALPINE_RELEASE}-aarch64.tar.gz"
 
 # Termux proot package — aarch64 static binary
-PROOT_VERSION="5.1.107-70"
+# Version format uses '.' separators (e.g. 5.1.107.89); a '-' breaks the URL
+# and returns 404 (verified against packages.termux.dev on 2026-08-05).
+PROOT_VERSION="5.1.107.89"
 PROOT_DEB_URL="https://packages.termux.dev/apt/termux-main/pool/main/p/proot/proot_${PROOT_VERSION}_aarch64.deb"
 
 mkdir -p "$ASSETS_DIR"
