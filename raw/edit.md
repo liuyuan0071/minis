@@ -28,6 +28,8 @@ stages:
       type: .tar.gz
     strategy:
       retry: "0"
+      # Gitee Go 任务超时上限 1440 分钟；显式声明，避免平台默认超时干扰
+      stepTimeout: 1440
 triggers:
   trigger: auto
   push:

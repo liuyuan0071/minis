@@ -16,7 +16,16 @@ ASSETS_DIR="$PROJECT_ROOT/src/android/app/src/main/assets"
 
 ALPINE_VERSION="3.21"
 ALPINE_RELEASE="3.21.3"
-ALPINE_URL="https://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/releases/aarch64/alpine-minirootfs-${ALPINE_RELEASE}-aarch64.tar.gz"
+# Prefer mainland-China mirrors for the Gitee Go build runner: the official
+# dl-cdn.alpinelinux.org CDN crawls at ~11KB/s there (6+ min for 3.7MB), while
+# USTC/Tsinghua/Aliyun mirrors are fast. Fall back to the official CDN last.
+ALPINE_REL="v${ALPINE_VERSION}/releases/aarch64/alpine-minirootfs-${ALPINE_RELEASE}-aarch64.tar.gz"
+ALPINE_URLS=(
+    "https://mirrors.ustc.edu.cn/alpine/${ALPINE_REL}"
+    "https://mirrors.tuna.tsinghua.edu.cn/alpine/${ALPINE_REL}"
+    "https://mirrors.aliyun.com/alpine/${ALPINE_REL}"
+    "https://dl-cdn.alpinelinux.org/alpine/${ALPINE_REL}"
+)
 
 # Termux proot package — aarch64 static binary
 # Version format uses '.' separators (e.g. 5.1.107.89); a '-' breaks the URL
@@ -33,8 +42,22 @@ PROOT_FILE="$ASSETS_DIR/proot-aarch64"
 if [ -f "$ROOTFS_FILE" ]; then
     echo "✓ Alpine rootfs already exists: $ROOTFS_FILE"
 else
-    echo "Downloading Alpine Linux ${ALPINE_RELEASE} aarch64 minirootfs..."
-    curl -fSL -o "$ROOTFS_FILE" "$ALPINE_URL"
+    echo "Downloading Alpine Linux ${ALPINE_RELEASE} aarch64 minirootfs (CN mirror first)..."
+    DL_OK=0
+    for url in "${ALPINE_URLS[@]}"; do
+        echo "  trying: $url"
+        # --max-time 150 per mirror: a dead mirror must not hang the build and
+        # push it past the Gitee Go container's ~12min wall-clock limit.
+        if curl -fSL --connect-timeout 10 --max-time 150 -o "$ROOTFS_FILE" "$url"; then
+            DL_OK=1
+            break
+        fi
+        rm -f "$ROOTFS_FILE"
+    done
+    if [ "$DL_OK" -ne 1 ]; then
+        echo "Error: all Alpine mirror URLs failed" >&2
+        exit 1
+    fi
     echo "✓ Downloaded: $ROOTFS_FILE ($(du -h "$ROOTFS_FILE" | cut -f1))"
 fi
 
