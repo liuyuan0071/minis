@@ -1,0 +1,31 @@
+version: '1.0'
+name: pipeline-android
+displayName: Android APK 云编译
+triggers:
+  trigger: auto
+  push:
+    branches:
+      prefix:
+        - master
+variables:
+  global:
+    # 在流水线【变量设置】中添加同名变量，填入你的 DeepSeek API Key
+    - DEEPSEEK_API_KEY
+stages:
+  - name: stage-build
+    displayName: 构建 APK
+    steps:
+      - step: build@android
+        name: build_android
+        displayName: Android 构建
+        jdkVersion: 17
+        commands:
+          - echo "DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY" > .env
+          - bash ./scripts/prepare_android_sandbox.sh || echo "沙箱资源准备失败（非阻断，聊天/技能功能不受影响）"
+          - cd src/android
+          - chmod +x gradlew
+          - ./gradlew :app:assembleRelease --no-daemon --stacktrace
+        artifacts:
+          - name: APK
+            path:
+              - src/android/app/build/outputs/apk/release/*.apk
