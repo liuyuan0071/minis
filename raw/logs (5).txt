@@ -1,0 +1,334 @@
+##################### ⚙️ container configuration #####################################################
+image: ccr-57qb48sp-vpc.cnc.su.baidubce.com/saas-gitee-go/ubuntu:plugin-24, cpu: 2, memory: 4Gi
+######################################################################################################
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+job-working-directory: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+2026/08/05 18:19:23  ##################################################################################
+2026/08/05 18:19:23  #             ____________.    _       __                                        #
+2026/08/05 18:19:23  #            / __________/    (*)  .__/ /_.   _________.   _________.            #
+2026/08/05 18:19:23  #           / /   ________.  / /  /__  __/   / _____  /   / _____  /             #
+2026/08/05 18:19:23  #          / /   /_____/ /  / /    / /      / /____/ /   / /____/ /              #
+2026/08/05 18:19:23  #         / /________/ /   / /    / /__.   / /______.   / /______.               #
+2026/08/05 18:19:23  #         \_____**____/   /_/    /_**_/    \__**___/    \__**___/                #
+2026/08/05 18:19:23  #                                                                                #
+2026/08/05 18:19:23  ################################################################################## 
+2026/08/05 18:19:23 
+2026/08/05 18:19:23 gradle-build plugin start++++++++++++++++++
+2026/08/05 18:19:23 WORKSPACE=/root/workspace/liuyuan166/minis
+2026/08/05 18:19:23 PLUGIN_JAVA_VERSION=17
+2026/08/05 18:19:23 PLUGIN_GRADLE_VERSION=9.3
+2026/08/05 18:19:23 PLUGIN_BUILD_TOOLS_VERSION=1.89
+2026/08/05 18:19:23 PLUGIN_NDK_VERSION=1.89
+2026/08/05 18:19:23 PLUGIN_ARTIFACT_BUILD_PATH=[{"name":"APK","path":["src/android/app/build/outputs/apk/release/*.apk"],"type":".tar.gz"}]
+2026/08/05 18:19:23 COMMAND=echo "DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY" > .env
+2026/08/05 18:19:23 bash ./scripts/prepare_android_sandbox.sh || echo "沙箱资源准备失败（非阻断，聊天/技能功能不受影响）"
+2026/08/05 18:19:23 mkdir -p $HOME/cmake; curl -fsSL --retry 3 -o $HOME/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-x86_64.tar.gz" && tar xzf $HOME/cmake.tar.gz -C $HOME/cmake --strip-components=1 && echo "cmake.dir=$HOME/cmake" >> src/android/local.properties && echo "CMake 3.22.1 就绪" || echo "CMake 准备失败（非阻断，构建可能报错）"
+2026/08/05 18:19:23 cd src/android
+2026/08/05 18:19:23 chmod +x gradlew
+2026/08/05 18:19:23 ./gradlew :app:assembleRelease --no-daemon --stacktrace
+2026/08/05 18:19:23 ################################# start exec user define command #################################################
+2026/08/05 18:19:23 Downloading Alpine Linux 3.21.3 aarch64 minirootfs...
+2026/08/05 18:19:23   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+2026/08/05 18:19:23                                  Dload  Upload   Total   Spent    Left  Speed
+2026/08/05 18:21:26   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0  3 3760k    3  123k    0     0  33304      0  0:01:55  0:00:03  0:01:52 33299  6 3760k    6  256k    0     0  55835      0  0:01:08  0:00:04  0:01:04 55828  7 3760k    7  290k    0     0  49572      0  0:01:17  0:00:06  0:01:11 56688  8 3760k    8  313k    0     0  47823      0  0:01:20  0:00:06  0:01:14 64715  9 3760k    9  342k    0     0  45074      0  0:01:25  0:00:07  0:01:18 71372  9 3760k    9  361k    0     0  41927      0  0:01:31  0:00:08  0:01:23 48418 10 3760k   10  388k    0     0  40900      0  0:01:34  0:00:09  0:01:25 26919 11 3760k   11  424k    0     0  39265      0  0:01:38  0:00:11  0:01:27 27029 11 3760k   11  437k    0     0  38085      0  0:01:41  0:00:11  0:01:30 25130 12 3760k   12  451k    0     0  36155      0  0:01:46  0:00:12  0:01:34 22290 12 3760k   12  485k    0     0  35522      0  0:01:48  0:00:13  0:01:35 24573 13 3760k   13  516k    0     0  35958      0  0:01:47  0:00:14  0:01:33 26303 14 3760k   14  561k    0     0  36236      0  0:01:46  0:00:15  0:01:31 29272 15 3760k   15  597k    0     0  36601      0  0:01:45  0:00:16  0:01:29 33056 16 3760k   16  625k    0     0  36180      0  0:01:46  0:00:17  0:01:29 36244 17 3760k   17  659k    0     0  35865      0  0:01:47  0:00:18  0:01:29 36851 18 3760k   18  684k    0     0  35542      0  0:01:48  0:00:19  0:01:29 34322 19 3760k   19  720k    0     0  35640      0  0:01:48  0:00:20  0:01:28 33684 19 3760k   19  740k    0     0  34775      0  0:01:50  0:00:21  0:01:29 28781 20 3760k   20  768k    0     0  34489      0  0:01:51  0:00:22  0:01:29 28630 20 3760k   20  788k    0     0  33941      0  0:01:53  0:00:23  0:01:30 26647 21 3760k   21  812k    0     0  33664      0  0:01:54  0:00:24  0:01:30 26247 22 3760k   22  852k    0     0  33927      0  0:01:53  0:00:25  0:01:28 26879 23 3760k   23  885k    0     0  33369      0  0:01:55  0:00:27  0:01:28 27689 23 3760k   23  893k    0     0  32663      0  0:01:57  0:00:28  0:01:29 24659 24 3760k   24  911k    0     0  32495      0  0:01:58  0:00:28  0:01:30 25499 24 3760k   24  938k    0     0  32366      0  0:01:58  0:00:29  0:01:29 25946 25 3760k   25  968k    0     0  32234      0  0:01:59  0:00:30  0:01:29 23566 26 3760k   26 1006k    0     0  32474      0  0:01:58  0:00:31  0:01:27 27150 27 3760k   27 1032k    0     0  32330      0  0:01:59  0:00:32  0:01:27 30339 28 3760k   28 1085k    0     0  32841      0  0:01:57  0:00:33  0:01:24 34782 29 3760k   29 1110k    0     0  32768      0  0:01:57  0:00:34  0:01:23 35151 30 3760k   30 1140k    0     0  32527      0  0:01:58  0:00:35  0:01:23 34291 30 3760k   30 1155k    0     0  32187      0  0:01:59  0:00:36  0:01:23 30363 31 3760k   31 1182k    0     0  32101      0  0:01:59  0:00:37  0:01:22 30612 31 3760k   31 1200k    0     0  31713      0  0:02:01  0:00:38  0:01:23 23922 32 3760k   32 1230k    0     0  31695      0  0:02:01  0:00:39  0:01:22 24316 33 3760k   33 1272k    0     0  32014      0  0:02:00  0:00:40  0:01:20 28177 35 3760k   35 1318k    0     0  32370      0  0:01:58  0:00:41  0:01:17 33726 36 3760k   36 1365k    0     0  32729      0  0:01:57  0:00:42  0:01:15 37478 36 3760k   36 1375k    0     0  32202      0  0:01:59  0:00:43  0:01:16 35987 36 3760k   36 1389k    0     0  31828      0  0:02:00  0:00:44  0:01:16 32888 37 3760k   37 1424k    0     0  31849      0  0:02:00  0:00:45  0:01:15 30533 39 3760k   39 1467k    0     0  32170      0  0:01:59  0:00:46  0:01:13 30493 40 3760k   40 1528k    0     0  32699      0  0:01:57  0:00:47  0:01:10 32452 41 3760k   41 1554k    0     0  32655      0  0:01:57  0:00:48  0:01:09 36627 41 3760k   41 1572k    0     0  32290      0  0:01:59  0:00:49  0:01:10 36311 42 3760k   42 1600k    0     0  32163      0  0:01:59  0:00:50  0:01:09 34965 43 3760k   43 1623k    0     0  32131      0  0:01:59  0:00:51  0:01:08 31773 44 3760k   44 1672k    0     0  32482      0  0:01:58  0:00:52  0:01:06 30341 45 3760k   45 1694k    0     0  32287      0  0:01:59  0:00:53  0:01:06 28707 46 3760k   46 1729k    0     0  32259      0  0:01:59  0:00:54  0:01:05 31949 46 3760k   46 1754k    0     0  32252      0  0:01:59  0:00:55  0:01:04 33213 48 3760k   48 1810k    0     0  32684      0  0:01:57  0:00:56  0:01:01 38428 49 3760k   49 1845k    0     0  32754      0  0:01:57  0:00:57  0:01:00 35647 49 3760k   49 1879k    0     0  32789      0  0:01:57  0:00:58  0:00:59 38221 51 3760k   51 1917k    0     0  32875      0  0:01:57  0:00:59  0:00:58 39877 52 3760k   52 1961k    0     0  32931      0  0:01:56  0:01:00  0:00:56 40078 52 3760k   52 1987k    0     0  32930      0  0:01:56  0:01:01  0:00:55 35689 53 3760k   53 2007k    0     0  32691      0  0:01:57  0:01:02  0:00:55 31991 53 3760k   53 2028k    0     0  32558      0  0:01:58  0:01:03  0:00:55 29893 55 3760k   55 2070k    0     0  32757      0  0:01:57  0:01:04  0:00:53 31347 56 3760k   56 2108k    0     0  32776      0  0:01:57  0:01:05  0:00:52 30832 56 3760k   56 2131k    0     0  32724      0  0:01:57  0:01:06  0:00:51 30122 57 3760k   57 2163k    0     0  32710      0  0:01:57  0:01:07  0:00:50 32959 58 3760k   58 2181k    0     0  32491      0  0:01:58  0:01:08  0:00:50 31641 58 3760k   58 2207k    0     0  32400      0  0:01:58  0:01:09  0:00:49 27837 59 3760k   59 2231k    0     0  32316      0  0:01:59  0:01:10  0:00:49 26039 60 3760k   60 2270k    0     0  32374      0  0:01:58  0:01:11  0:00:47 27814 61 3760k   61 2297k    0     0  32331      0  0:01:59  0:01:12  0:00:47 27256 61 3760k   61 2297k    0     0  31892      0  0:02:00  0:01:13  0:00:47 23671 61 3760k   61 2323k    0     0  31854      0  0:02:00  0:01:14  0:00:46 24096 63 3760k   63 2384k    0     0  32239      0  0:01:59  0:01:15  0:00:44 31163 64 3760k   64 2433k    0     0  32449      0  0:01:58  0:01:16  0:00:42 33520 64 3760k   64 2443k    0     0  32124      0  0:01:59  0:01:17  0:00:42 29180 65 3760k   65 2474k    0     0  32154      0  0:01:59  0:01:18  0:00:41 35994 66 3760k   66 2512k    0     0  32222      0  0:01:59  0:01:19  0:00:40 37562 67 3760k   67 2541k    0     0  32222      0  0:01:59  0:01:20  0:00:39 31976 68 3760k   68 2582k    0     0  32320      0  0:01:59  0:01:21  0:00:38 30353 69 3760k   69 2619k    0     0  32424      0  0:01:58  0:01:22  0:00:36 37258 70 3760k   70 2647k    0     0  32279      0  0:01:59  0:01:23  0:00:36 34186 70 3760k   70 2658k    0     0  32038      0  0:02:00  0:01:24  0:00:36 29154 71 3760k   71 2684k    0     0  32076      0  0:02:00  0:01:25  0:00:35 29679 72 3760k   72 2713k    0     0  31981      0  0:02:00  0:01:26  0:00:34 26487 72 3760k   72 2737k    0     0  31961      0  0:02:00  0:01:27  0:00:33 24286 73 3760k   73 2767k    0     0  31950      0  0:02:00  0:01:28  0:00:32 26068 75 3760k   75 2826k    0     0  32227      0  0:01:59  0:01:29  0:00:30 35569 75 3760k   75 2857k    0     0  32257      0  0:01:59  0:01:30  0:00:29 35353 76 3760k   76 2885k    0     0  32217      0  0:01:59  0:01:31  0:00:28 36436 76 3760k   76 2888k    0     0  31862      0  0:02:00  0:01:32  0:00:28 30170 77 3760k   77 2911k    0     0  31803      0  0:02:01  0:01:33  0:00:28 29231 78 3760k   78 2943k    0     0  31809      0  0:02:01  0:01:34  0:00:27 24220 78 3760k   78 2964k    0     0  31722      0  0:02:01  0:01:35  0:00:26 22021 79 3760k   79 2992k    0     0  31653      0  0:02:01  0:01:36  0:00:25 21463 80 3760k   80 3013k    0     0  31582      0  0:02:01  0:01:37  0:00:24 26262 81 3760k   81 3046k    0     0  31595      0  0:02:01  0:01:38  0:00:23 27688 81 3760k   81 3072k    0     0  31547      0  0:02:02  0:01:39  0:00:23 26562 82 3760k   82 3088k    0     0  31403      0  0:02:02  0:01:40  0:00:22 25309 82 3760k   82 3109k    0     0  31306      0  0:02:02  0:01:41  0:00:21 24440 83 3760k   83 3137k    0     0  31272      0  0:02:03  0:01:42  0:00:21 25250 84 3760k   84 3185k    0     0  31454      0  0:02:02  0:01:43  0:00:19 28645 85 3760k   85 3225k    0     0  31536      0  0:02:02  0:01:44  0:00:18 31328 87 3760k   87 3271k    0     0  31691      0  0:02:01  0:01:45  0:00:16 37502 88 3760k   88 3320k    0     0  31854      0  0:02:00  0:01:46  0:00:14 42937 89 3760k   89 3348k    0     0  31833      0  0:02:00  0:01:47  0:00:13 43390 89 3760k   89 3376k    0     0  31794      0  0:02:01  0:01:48  0:00:13 38785 90 3760k   90 3402k    0     0  31749      0  0:02:01  0:01:49  0:00:12 36195 91 3760k   91 3432k    0     0  31707      0  0:02:01  0:01:50  0:00:11 32044 91 3760k   91 3456k    0     0  31677      0  0:02:01  0:01:51  0:00:10 27887 92 3760k   92 3490k    0     0  31702      0  0:02:01  0:01:52  0:00:09 28912 93 3760k   93 3512k    0     0  31623      0  0:02:01  0:01:53  0:00:08 27909 94 3760k   94 3549k    0     0  31679      0  0:02:01  0:01:54  0:00:07 30141 95 3760k   95 3584k    0     0  31578      0  0:02:01  0:01:56  0:00:05 28928 95 3760k   95 3598k    0     0  31557      0  0:02:02  0:01:56  0:00:06 28882 96 3760k   96 3618k    0     0  31482      0  0:02:02  0:01:57  0:00:05 26472 96 3760k   96 3635k    0     0  31354      0  0:02:02  0:01:58  0:00:04 25205 97 3760k   97 3656k    0     0  31275      0  0:02:03  0:01:59  0:00:04 22021 98 3760k   98 3697k    0     0  31371      0  0:02:02  0:02:00  0:00:02 25972 98 3760k   98 3720k    0     0  31304      0  0:02:02  0:02:01  0:00:01 25349 99 3760k   99 3748k    0     0  31270      0  0:02:03  0:02:02  0:00:01 26303100 3760k  100 3760k    0     0  31305      0  0:02:02  0:02:02 --:--:-- 29938
+2026/08/05 18:21:26 ✓ Downloaded: /root/workspace/liuyuan166/minis/src/android/app/src/main/assets/alpine-minirootfs.tar.gz (3.7M)
+2026/08/05 18:21:26 Downloading PRoot 5.1.107.89 aarch64 from Termux...
+2026/08/05 18:21:26   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+2026/08/05 18:21:26                                  Dload  Upload   Total   Spent    Left  Speed
+2026/08/05 18:21:28   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 95784  100 95784    0     0  58053      0  0:00:01  0:00:01 --:--:-- 58086
+2026/08/05 18:21:28 ✓ Extracted PRoot binary: /root/workspace/liuyuan166/minis/src/android/app/src/main/assets/proot-aarch64 (236K)
+2026/08/05 18:21:28 
+2026/08/05 18:21:28 Assets ready in: /root/workspace/liuyuan166/minis/src/android/app/src/main/assets
+2026/08/05 18:21:28 total 6.9M
+2026/08/05 18:21:28 -rw-r--r-- 1 root root 3.7M Aug  5 18:21 alpine-minirootfs.tar.gz
+2026/08/05 18:21:28 drwxr-xr-x 2 root root 4.0K Aug  5 18:19 bundled-skills
+2026/08/05 18:21:28 drwxr-xr-x 5 root root 4.0K Aug  5 18:19 default_mount
+2026/08/05 18:21:28 drwxr-xr-x 2 root root 4.0K Aug  5 18:19 jieba
+2026/08/05 18:21:28 drwxr-xr-x 3 root root 4.0K Aug  5 18:19 katex
+2026/08/05 18:21:28 -rw-r--r-- 1 root root 2.9M Aug  5 18:19 models-dev-api.json
+2026/08/05 18:21:28 -rwx--x--x 1 root root 234K Aug  5 18:21 proot-aarch64
+2026/08/05 18:22:39 curl: (16) Error in the HTTP2 framing layer
+2026/08/05 18:22:39 CMake 准备失败（非阻断，构建可能报错）
+2026/08/05 18:22:39 Downloading https://mirrors.cloud.tencent.com/gradle/gradle-8.11.1-bin.zip
+2026/08/05 18:22:42 .............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+2026/08/05 18:22:44 
+2026/08/05 18:22:44 Welcome to Gradle 8.11.1!
+2026/08/05 18:22:44 
+2026/08/05 18:22:44 Here are the highlights of this release:
+2026/08/05 18:22:44  - Parallel load and store for Configuration Cache
+2026/08/05 18:22:44  - Java compilation errors at the end of the build output
+2026/08/05 18:22:44  - Consolidated report for warnings and deprecations
+2026/08/05 18:22:44 
+2026/08/05 18:22:44 For more details see https://docs.gradle.org/8.11.1/release-notes.html
+2026/08/05 18:22:44 
+2026/08/05 18:22:44 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+2026/08/05 18:22:46 Daemon will be stopped at the end of the build 
+2026/08/05 18:23:13 Build was configured to prefer settings repositories over project repositories but repository 'maven' was added by initialization script '/root/.gradle/init.gradle'
+2026/08/05 18:23:13 Build was configured to prefer settings repositories over project repositories but repository 'maven' was added by initialization script '/root/.gradle/init.gradle'
+2026/08/05 18:24:05 WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 36
+2026/08/05 18:24:05 
+2026/08/05 18:24:05 This Android Gradle plugin (8.7.3) was tested up to compileSdk = 35.
+2026/08/05 18:24:05 
+2026/08/05 18:24:05 You are strongly encouraged to update your project to use a newer
+2026/08/05 18:24:05 Android Gradle plugin that has been tested with compileSdk = 36.
+2026/08/05 18:24:05 
+2026/08/05 18:24:05 If you are already using the latest version of the Android Gradle plugin,
+2026/08/05 18:24:05 you may need to wait until a newer version with support for compileSdk = 36 is available.
+2026/08/05 18:24:05 
+2026/08/05 18:24:05 For more information refer to the compatibility table:
+2026/08/05 18:24:05 https://d.android.com/r/tools/api-level-support
+2026/08/05 18:24:05 
+2026/08/05 18:24:05 To suppress this warning, add/update
+2026/08/05 18:24:05     android.suppressUnsupportedCompileSdk=36
+2026/08/05 18:24:05 to this project's gradle.properties.
+2026/08/05 18:24:05 > Task :app:copyBashismRules
+2026/08/05 18:24:05 > Task :app:preBuild
+2026/08/05 18:24:05 > Task :app:preReleaseBuild
+2026/08/05 18:24:06 > Task :app:configureCMakeRelWithDebInfo[arm64-v8a] FAILED
+2026/08/05 18:24:06 
+2026/08/05 18:24:06 FAILURE: Build failed with an exception.
+2026/08/05 18:24:06 
+2026/08/05 18:24:06 * What went wrong:
+2026/08/05 18:24:06 Execution failed for task ':app:configureCMakeRelWithDebInfo[arm64-v8a]'.
+2026/08/05 18:24:06 > [CXX1416] Could not find Ninja on PATH or in SDK CMake bin folders.
+2026/08/05 18:24:06 
+2026/08/05 18:24:06 * Try:
+2026/08/05 18:24:06 > Run with --info or --debug option to get more log output.
+2026/08/05 18:24:06 > Run with --scan to get full insights.
+2026/08/05 18:24:06 > Get more help at https://help.gradle.org.
+2026/08/05 18:24:06 
+2026/08/05 18:24:06 * Exception is:
+2026/08/05 18:24:06 org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:configureCMakeRelWithDebInfo[arm64-v8a]'.
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
+2026/08/05 18:24:06 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+2026/08/05 18:24:06 	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+2026/08/05 18:24:06 	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+2026/08/05 18:24:06 	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+2026/08/05 18:24:06 	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+2026/08/05 18:24:06 	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+2026/08/05 18:24:06 	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+2026/08/05 18:24:06 	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+2026/08/05 18:24:06 	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+2026/08/05 18:24:06 	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:46)
+2026/08/05 18:24:06 	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+2026/08/05 18:24:06 	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+2026/08/05 18:24:06 	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+2026/08/05 18:24:06 	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
+2026/08/05 18:24:06 	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
+2026/08/05 18:24:06 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+2026/08/05 18:24:06 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+2026/08/05 18:24:06 Caused by: com.android.builder.errors.EvalIssueException: [CXX1416] Could not find Ninja on PATH or in SDK CMake bin folders.
+2026/08/05 18:24:06 	at com.android.builder.errors.IssueReporter.reportError(IssueReporter.kt:118)
+2026/08/05 18:24:06 	at com.android.builder.errors.IssueReporter.reportError$default(IssueReporter.kt:114)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.logging.IssueReporterLoggingEnvironment.log(IssueReporterLoggingEnvironment.kt:113)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.logging.PassThroughRecordingLoggingEnvironment.log(PassThroughRecordingLoggingEnvironment.kt:43)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.logging.ThreadLoggingEnvironment$Companion.reportFormattedErrorToCurrentLogger(LoggingEnvironment.kt:230)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.logging.LoggingEnvironmentKt.errorln(LoggingEnvironment.kt:62)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.configure.NinjaLocatorKt.findNinjaPathLogic(NinjaLocator.kt:59)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.configure.NinjaLocator.findNinjaPath(NinjaLocator.kt:81)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.configure.NativeLocationsBuildService$locateNinja$1$1.apply(NativeLocationsBuildService.kt:100)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.configure.NativeLocationsBuildService$locateNinja$1$1.apply(NativeLocationsBuildService.kt:98)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.configure.NativeLocationsBuildService.locateNinja(NativeLocationsBuildService.kt:98)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.cxx.configure.NativeLocationsBuildServiceKt.rewriteWithLocations(NativeLocationsBuildService.kt:191)
+2026/08/05 18:24:06 	at com.android.build.gradle.tasks.ExternalNativeBuildJsonTask.doTaskAction(ExternalNativeBuildJsonTask.kt:86)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.tasks.UnsafeOutputsTask$taskAction$$inlined$recordTaskAction$1.invoke(BaseTask.kt:78)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.tasks.Blocks.recordSpan(Blocks.java:51)
+2026/08/05 18:24:06 	at com.android.build.gradle.internal.tasks.UnsafeOutputsTask.taskAction(UnsafeOutputsTask.kt:81)
+2026/08/05 18:24:06 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+2026/08/05 18:24:06 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+2026/08/05 18:24:06 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+2026/08/05 18:24:06 	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+2026/08/05 18:24:06 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:58)
+2026/08/05 18:24:06 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+2026/08/05 18:24:06 	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+2026/08/05 18:24:06 	at org.gradle.internal.Either$Right.fold(Either.java:175)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:107)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:56)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:56)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+2026/08/05 18:24:06 	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+2026/08/05 18:24:06 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+2026/08/05 18:24:06 	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+2026/08/05 18:24:06 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+2026/08/05 18:24:06 	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+2026/08/05 18:24:06 	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+2026/08/05 18:24:06 	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+2026/08/05 18:24:06 	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+2026/08/05 18:24:06 	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+2026/08/05 18:24:06 	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+2026/08/05 18:24:06 	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+2026/08/05 18:24:06 	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+2026/08/05 18:24:06 	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:46)
+2026/08/05 18:24:06 	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+2026/08/05 18:24:06 	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+2026/08/05 18:24:06 	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+2026/08/05 18:24:06 	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
+2026/08/05 18:24:06 	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+2026/08/05 18:24:06 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+2026/08/05 18:24:06 	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
+2026/08/05 18:24:06 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+2026/08/05 18:24:06 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+2026/08/05 18:24:06 
+2026/08/05 18:24:06 
+2026/08/05 18:24:07 BUILD FAILED in 1m 26s
+2026/08/05 18:24:07 2 actionable tasks: 2 executed
+2026/08/05 18:24:07 Fail to run command: echo -e " ##################################################################################\n"        "#             ____________.    _       __                                        #\n"        "#            / __________/    (*)  .__/ /_.   _________.   _________.            #\n"        "#           / /   ________.  / /  /__  __/   / _____  /   / _____  /             #\n"        "#          / /   /_____/ /  / /    / /      / /____/ /   / /____/ /              #\n"        "#         / /________/ /   / /    / /__.   / /______.   / /______.               #\n"        "#         \\_____**____/   /_/    /_**_/    \\__**___/    \\__**___/                #\n"        "#                                                                                #\n"        "################################################################################## \n"&& bash /mnt/pipeline-tools/plugins/android/1.0/step.sh
+exit status 1
+cmd exec failure
