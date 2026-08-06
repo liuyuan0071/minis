@@ -94,12 +94,17 @@ android {
 
     buildTypes {
         release {
-            // [T-gitee-go-build] R8 full minification disabled: on the Gitee Go
-            // build runner (2-core / 4Gi container) minifyReleaseWithR8 for this
-            // large Compose app OOMs / hits the job timeout and dies without
-            // producing an error log. Skipping it trades APK size (~2x) for a
-            // fast, deterministic release build; functionality is unaffected.
-            isMinifyEnabled = false
+            // [T-gitee-go-build] R8 was disabled on the Gitee Go runner (2c/4Gi
+            // container) where it OOM'd. On GitHub Actions (4c/16Gi) it runs
+            // fine and shrinks the APK from ~100MB to ~40MB — much faster for
+            // users in China to download from GitHub.
+            isMinifyEnabled = true
+            // [T-workhelper-isolate] Different appId suffix so the modified
+            // "工作助手" APK can coexist with the original Minis on the same
+            // device (both use different signatures → same package name
+            // would conflict). The suffix is appended to the base appId
+            // (com.openminis.app → com.openminis.app.workhelper).
+            applicationIdSuffix = ".workhelper"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
