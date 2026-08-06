@@ -33,10 +33,15 @@ ALPINE_URLS=(
 PROOT_VERSION="5.1.107.89"
 PROOT_DEB_URL="https://packages.termux.dev/apt/termux-main/pool/main/p/proot/proot_${PROOT_VERSION}_aarch64.deb"
 
+# Termux libtalloc — proot links against libtalloc.so.2 dynamically
+TALLOC_VERSION="2.4.3"
+TALLOC_DEB_URL="https://packages.termux.dev/apt/termux-main/pool/main/t/talloc/libtalloc_${TALLOC_VERSION}_aarch64.deb"
+
 mkdir -p "$ASSETS_DIR"
 
 ROOTFS_FILE="$ASSETS_DIR/alpine-minirootfs.tar.gz"
 PROOT_FILE="$ASSETS_DIR/proot-aarch64"
+JNILIBS_DIR="$PROJECT_ROOT/src/android/app/src/main/jniLibs/arm64-v8a"
 
 # --- Alpine rootfs ---
 if [ -f "$ROOTFS_FILE" ]; then
@@ -106,7 +111,6 @@ else
     # nativeLibraryDir/libproot.so at install time (RootfsManager
     # reads the binary from there). The build_proot.sh script does
     # this naturally; the prebuilt download path must match it.
-    JNILIBS_DIR="$PROJECT_ROOT/src/android/app/src/main/jniLibs/arm64-v8a"
     mkdir -p "$JNILIBS_DIR"
     cp "$PROOT_BIN" "$JNILIBS_DIR/libproot.so"
     chmod +x "$JNILIBS_DIR/libproot.so"
@@ -115,6 +119,37 @@ else
     cd "$PROJECT_ROOT"
 
     echo "✓ Extracted PRoot binary: $PROOT_FILE ($(du -h "$PROOT_FILE" | cut -f1))"
+fi
+
+# --- libtalloc (PRoot runtime dependency) ---
+TALLOC_SO="$JNILIBS_DIR/libtalloc.so.2"
+if [ -f "$TALLOC_SO" ]; then
+    echo "✓ libtalloc.so.2 already exists: $TALLOC_SO"
+else
+    echo "Downloading libtalloc ${TALLOC_VERSION} aarch64 from Termux..."
+    TALLOC_TMPDIR="$(mktemp -d)"
+    TALLOC_DEB_FILE="$TALLOC_TMPDIR/talloc.deb"
+    if curl -fSL --connect-timeout 10 --max-time 60 -o "$TALLOC_DEB_FILE" "$TALLOC_DEB_URL"; then
+        cd "$TALLOC_TMPDIR"
+        ar x "$TALLOC_DEB_FILE"
+        if [ -f "data.tar.xz" ]; then
+            tar xf data.tar.xz
+        elif [ -f "data.tar.gz" ]; then
+            tar xzf data.tar.gz
+        fi
+        # Find libtalloc.so.2 — it lives under ./system/lib/ or ./data/data/... on Termux
+        FOUND_SO=$(find "$TALLOC_TMPDIR" -name "libtalloc.so.2*" -type f 2>/dev/null | head -1)
+        if [ -n "$FOUND_SO" ]; then
+            cp "$FOUND_SO" "$TALLOC_SO"
+            chmod +x "$TALLOC_SO"
+            echo "✓ Installed: $TALLOC_SO ($(du -h "$TALLOC_SO" | cut -f1))"
+        else
+            echo "! libtalloc.so.2 not found in Termux package (proot may fail at runtime)"
+        fi
+    else
+        echo "! Failed to download libtalloc (proot may fail at runtime)"
+    fi
+    rm -rf "$TALLOC_TMPDIR"
 fi
 
 echo ""
