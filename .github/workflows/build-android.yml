@@ -12,16 +12,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Inject DeepSeek API Key
         run: echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" > .env
 
-      - name: Prepare sandbox assets
+      - name: Install build tools
         run: |
-          bash ./scripts/prepare_android_sandbox.sh || echo "沙箱资源准备失败（非阻断）"
-
-      - name: Install ninja-build
-        run: sudo apt-get update -y && sudo apt-get install -y ninja-build && echo "ninja 就绪"
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build make curl ar
+          echo "构建工具就绪"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -34,6 +35,15 @@ jobs:
         with:
           accept-android-sdk-licenses: true
           packages: "platforms;android-36 build-tools;36.0.0 ndk;27.3.13750724"
+
+      - name: Build PRoot from source (OpenMinis fork)
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.3.13750724"
+          bash ./deps/build_proot.sh || echo "PRoot 源码构建失败，尝试使用预构建二进制"
+
+      - name: Prepare sandbox assets (alpine rootfs only)
+        run: |
+          bash ./scripts/prepare_android_sandbox.sh || echo "沙箱资源准备失败（非阻断）"
 
       - name: Build APK
         working-directory: src/android
