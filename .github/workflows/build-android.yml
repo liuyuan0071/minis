@@ -21,7 +21,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build make curl ar
+          sudo apt-get install -y ninja-build make binutils
           echo "构建工具就绪"
 
       - name: Set up JDK 17
