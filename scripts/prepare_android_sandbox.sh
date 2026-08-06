@@ -101,6 +101,17 @@ else
 
     cp "$PROOT_BIN" "$PROOT_FILE"
     chmod +x "$PROOT_FILE"
+
+    # Also install as a native library so Android extracts it to
+    # nativeLibraryDir/libproot.so at install time (RootfsManager
+    # reads the binary from there). The build_proot.sh script does
+    # this naturally; the prebuilt download path must match it.
+    JNILIBS_DIR="$PROJECT_ROOT/src/android/app/src/main/jniLibs/arm64-v8a"
+    mkdir -p "$JNILIBS_DIR"
+    cp "$PROOT_BIN" "$JNILIBS_DIR/libproot.so"
+    chmod +x "$JNILIBS_DIR/libproot.so"
+    echo "✓ Installed: $JNILIBS_DIR/libproot.so"
+
     cd "$PROJECT_ROOT"
 
     echo "✓ Extracted PRoot binary: $PROOT_FILE ($(du -h "$PROOT_FILE" | cut -f1))"
