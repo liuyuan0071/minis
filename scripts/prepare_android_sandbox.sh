@@ -16,15 +16,17 @@ ASSETS_DIR="$PROJECT_ROOT/src/android/app/src/main/assets"
 
 ALPINE_VERSION="3.21"
 ALPINE_RELEASE="3.21.3"
-# Prefer mainland-China mirrors for the Gitee Go build runner: the official
-# dl-cdn.alpinelinux.org CDN crawls at ~11KB/s there (6+ min for 3.7MB), while
-# USTC/Tsinghua/Aliyun mirrors are fast. Fall back to the official CDN last.
+# Mirror order targets the current CI (GitHub Actions, US runners): the
+# official dl-cdn.alpinelinux.org CDN is fast there, while the CN mirrors
+# (USTC/Tsinghua/Aliyun) are kept as fallbacks for China-based runners
+# (Gitee Go). Per-mirror timeout is short so a dead mirror can't hang the
+# build past the runner's wall-clock limit.
 ALPINE_REL="v${ALPINE_VERSION}/releases/aarch64/alpine-minirootfs-${ALPINE_RELEASE}-aarch64.tar.gz"
 ALPINE_URLS=(
+    "https://dl-cdn.alpinelinux.org/alpine/${ALPINE_REL}"
     "https://mirrors.ustc.edu.cn/alpine/${ALPINE_REL}"
     "https://mirrors.tuna.tsinghua.edu.cn/alpine/${ALPINE_REL}"
     "https://mirrors.aliyun.com/alpine/${ALPINE_REL}"
-    "https://dl-cdn.alpinelinux.org/alpine/${ALPINE_REL}"
 )
 
 # Termux proot package — aarch64 static binary
@@ -53,13 +55,13 @@ JNILIBS_PROOT="$JNILIBS_DIR/libproot.so"
 if [ -f "$ROOTFS_FILE" ]; then
     echo "✓ Alpine rootfs already exists: $ROOTFS_FILE"
 else
-    echo "Downloading Alpine Linux ${ALPINE_RELEASE} aarch64 minirootfs (CN mirror first)..."
+    echo "Downloading Alpine Linux ${ALPINE_RELEASE} aarch64 minirootfs..."
     DL_OK=0
     for url in "${ALPINE_URLS[@]}"; do
         echo "  trying: $url"
-        # --max-time 150 per mirror: a dead mirror must not hang the build and
-        # push it past the Gitee Go container's ~12min wall-clock limit.
-        if curl -fSL --connect-timeout 10 --max-time 150 -o "$ROOTFS_FILE" "$url"; then
+        # --max-time 60 per mirror: a dead mirror must not hang the build and
+        # push it past the runner's wall-clock limit.
+        if curl -fSL --connect-timeout 10 --max-time 60 -o "$ROOTFS_FILE" "$url"; then
             DL_OK=1
             break
         fi
