@@ -306,6 +306,7 @@ build_proot() {
             CPPFLAGS="$cppflags" \
             CFLAGS="$cflags" \
             LDFLAGS="$ldflags" \
+            PROOT_UNBUNDLE_LOADER="$JNILIBS_DIR" \
             -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
     )
 
@@ -323,6 +324,26 @@ build_proot() {
 
     log_success "proot built: $built ($(du -h "$built" | awk '{print $1}'))"
     BUILT_PROOT="$built"
+
+    # The loader is built UNBUNDLED (PROOT_UNBUNDLE_LOADER): the fork would
+    # otherwise extract its embedded loader to PROOT_TMP_DIR and exec it from
+    # there — on stock Android the app's data dir is exec-restricted, so that
+    # exec fails with EACCES ("Permission denied" right at shell start). With
+    # the unbundled loader shipped as a jniLibs entry, it lands in
+    # nativeLibraryDir (executable — proot itself runs from there) and the
+    # app sets PROOT_LOADER to that path (PRootKernel.kt), so no temp-file
+    # exec ever happens.
+    mkdir -p "$JNILIBS_DIR"
+    if [ -f "$PROOT_DIR/src/loader/loader" ]; then
+        install -m 0755 "$PROOT_DIR/src/loader/loader" "$JNILIBS_DIR/libproot-loader.so"
+        log_success "Installed: $JNILIBS_DIR/libproot-loader.so"
+    else
+        log_error "Built proot but loader/loader is missing (PROOT_UNBUNDLE_LOADER build broken?)"
+    fi
+    if [ -f "$PROOT_DIR/src/loader/loader-m32" ]; then
+        install -m 0755 "$PROOT_DIR/src/loader/loader-m32" "$JNILIBS_DIR/libproot-loader32.so"
+        log_success "Installed: $JNILIBS_DIR/libproot-loader32.so"
+    fi
 }
 
 # ----------------------------------------------------------------------------
