@@ -122,19 +122,81 @@ else
 fi
 
 # --- libtalloc (PRoot runtime dependency) ---
-# NOTE: we stage libtalloc into an app *asset* directory, not jniLibs.
-# Android's NativeLibraryHelper only extracts entries whose filename ends
-# with ".so"; "libtalloc.so.2" ends with ".2" and would never be unpacked
-# to nativeLibraryDir. Assets are extracted Writer-side at first boot by
-# RootfsManager.stageRuntimeLibraryIfNeeded() into filesDir/native-libs/.
+#
+# Background: Termux's prebuilt proot links libtalloc DYNAMICALLY
+# (DT_NEEDED = "libtalloc.so.2"). On stock Android this is a problem:
+#   1. The APK installer (NativeLibraryHelper) only extracts jniLibs entries
+#      whose filename ends with ".so"; "libtalloc.so.2" ends in ".2" and is
+#      silently skipped, so it never lands in nativeLibraryDir.
+#   2. Android's linker uses namespace isolation (API 24+): even if we stage
+#      libtalloc.so.2 into an app-private dir and add it to LD_LIBRARY_PATH,
+#      the linker won't search non-whitelisted paths. Only nativeLibraryDir
+#      is whitelisted for the app.
+#
+# Fix (what PRoot Distro / UserLAnd do): use patchelf to rewrite proot's
+# DT_NEEDED from "libtalloc.so.2" → "libtalloc.so", then ship the lib renamed
+# to "libtalloc.so" in jniLibs. The installer extracts it to
+# nativeLibraryDir/libtalloc.so (name ends in ".so" ✓, path is in the app's
+# linker namespace ✓), and proot resolves it at load time with no
+# LD_LIBRARY_PATH gymnastics.
+#
+# Fallback when patchelf is unavailable (e.g. a bare Windows host): stage
+# libtalloc.so.2 under assets/native-libs/ and rely on
+# RootfsManager.stageRuntimeLibraryIfNeeded() + PRootKernel.ldLibraryPath.
+# This only works on devices where the linker honours LD_LIBRARY_PATH for
+# app-private dirs (older Android / non-namespace-isolated), so patchelf is
+# strongly preferred.
+
+# Ensure patchelf is available; try to install it on Linux CI runners.
+# (GitHub Actions runs as a non-root user, so we need sudo; Gitee Go / root
+# containers don't.)
+if ! command -v patchelf >/dev/null 2>&1; then
+    if [ "$(uname -s)" = "Linux" ] && command -v apt-get >/dev/null 2>&1; then
+        echo "Installing patchelf (needed to rewrite proot's libtalloc NEEDED)..."
+        APT_INSTALL="apt-get install -y patchelf"
+        if ! $APT_INSTALL >/dev/null 2>&1; then
+            if command -v sudo >/dev/null 2>&1; then
+                sudo -n apt-get update -y >/dev/null 2>&1 || true
+                sudo -n $APT_INSTALL >/dev/null 2>&1 || true
+            fi
+        fi
+    fi
+fi
+HAVE_PATCHELF=0
+command -v patchelf >/dev/null 2>&1 && HAVE_PATCHELF=1
+
+# Does the proot we're shipping actually need libtalloc? (Static builds from
+# build_proot.sh carry no libtalloc DT_NEEDED and can skip all of this.)
+JNILIBS_PROOT="$JNILIBS_DIR/libproot.so"
+PROOT_NEEDS_TALLOC=0
+if [ -f "$JNILIBS_PROOT" ]; then
+    if [ "$HAVE_PATCHELF" = "1" ]; then
+        if patchelf --print-needed "$JNILIBS_PROOT" 2>/dev/null | grep -q 'libtalloc'; then
+            PROOT_NEEDS_TALLOC=1
+        fi
+    else
+        # Best-effort: the dynamic Termux proot always needs libtalloc.
+        # If a static build happened to land here without patchelf to inspect,
+        # the staging below is just unused dead weight (~50K).
+        if strings "$JNILIBS_PROOT" 2>/dev/null | grep -q 'libtalloc.so.2'; then
+            PROOT_NEEDS_TALLOC=1
+        fi
+    fi
+fi
+
 NATIVE_LIBS_ASSET_DIR="$ASSETS_DIR/native-libs"
-TALLOC_SO="$NATIVE_LIBS_ASSET_DIR/libtalloc.so.2"
-if [ -f "$TALLOC_SO" ]; then
-    echo "✓ libtalloc.so.2 already exists: $TALLOC_SO"
+ASSET_TALLOC="$NATIVE_LIBS_ASSET_DIR/libtalloc.so.2"
+
+if [ "$PROOT_NEEDS_TALLOC" = "0" ]; then
+    echo "✓ proot does not need libtalloc (static build) — nothing to do"
+    # Clean up any stale assets from a previous dynamic build.
+    rm -f "$ASSET_TALLOC" "$JNILIBS_DIR/libtalloc.so"
 else
-    echo "Downloading libtalloc ${TALLOC_VERSION} aarch64 from Termux..."
+    echo "proot needs libtalloc — preparing runtime lib..."
+    # Extract libtalloc.so.2 from the Termux .deb into a temp dir.
     TALLOC_TMPDIR="$(mktemp -d)"
     TALLOC_DEB_FILE="$TALLOC_TMPDIR/talloc.deb"
+    FOUND_SO=""
     if curl -fSL --connect-timeout 10 --max-time 60 -o "$TALLOC_DEB_FILE" "$TALLOC_DEB_URL"; then
         cd "$TALLOC_TMPDIR"
         ar x "$TALLOC_DEB_FILE"
@@ -142,19 +204,46 @@ else
             tar xf data.tar.xz
         elif [ -f "data.tar.gz" ]; then
             tar xzf data.tar.gz
+        elif [ -f "data.tar.zst" ]; then
+            zstd -d data.tar.zst -o data.tar
+            tar xf data.tar
         fi
-        # Find libtalloc.so.2 — it lives under ./system/lib/ or ./data/data/... on Termux
+        # libtalloc.so.2 lives under ./system/lib/ or ./data/data/.../lib/ on Termux.
         FOUND_SO=$(find "$TALLOC_TMPDIR" -name "libtalloc.so.2*" -type f 2>/dev/null | head -1)
-        if [ -n "$FOUND_SO" ]; then
-            mkdir -p "$NATIVE_LIBS_ASSET_DIR"
-            cp "$FOUND_SO" "$TALLOC_SO"
-            chmod +x "$TALLOC_SO"
-            echo "✓ Installed: $TALLOC_SO ($(du -h "$TALLOC_SO" | cut -f1))"
-        else
-            echo "! libtalloc.so.2 not found in Termux package (proot may fail at runtime)"
-        fi
     else
-        echo "! Failed to download libtalloc (proot may fail at runtime)"
+        echo "! Failed to download libtalloc (proot may fail at runtime)" >&2
+    fi
+
+    cd "$PROJECT_ROOT"
+
+    if [ -n "$FOUND_SO" ] && [ "$HAVE_PATCHELF" = "1" ]; then
+        # --- Preferred path: rewrite NEEDED + ship libtalloc.so in jniLibs ---
+        mkdir -p "$JNILIBS_DIR"
+        # Rewrite DT_NEEDED on the copy that actually runs
+        # (nativeLibraryDir/libproot.so) and the assets copy (for parity).
+        patchelf --replace-needed libtalloc.so.2 libtalloc.so "$JNILIBS_PROOT"
+        if [ -f "$PROOT_FILE" ]; then
+            patchelf --replace-needed libtalloc.so.2 libtalloc.so "$PROOT_FILE"
+        fi
+        # Ship the lib under a ".so" name so the installer extracts it.
+        cp "$FOUND_SO" "$JNILIBS_DIR/libtalloc.so"
+        chmod +x "$JNILIBS_DIR/libtalloc.so"
+        # Remove any stale versioned-asset staging from older builds.
+        rm -f "$ASSET_TALLOC"
+        rmdir "$NATIVE_LIBS_ASSET_DIR" 2>/dev/null || true
+        echo "✓ Patched proot NEEDED → libtalloc.so and installed: $JNILIBS_DIR/libtalloc.so ($(du -h "$JNILIBS_DIR/libtalloc.so" | cut -f1))"
+        echo "  ( installer will extract it to nativeLibraryDir/libtalloc.so ; linker resolves it in-app namespace )"
+    elif [ -n "$FOUND_SO" ]; then
+        # --- Fallback path (no patchelf): asset-staging ---
+        # Works only where the linker honours LD_LIBRARY_PATH for app-private
+        # dirs (older Android). Kept as a last resort.
+        echo "! patchelf not found — falling back to asset-staging (may fail on namespace-isolated devices)" >&2
+        mkdir -p "$NATIVE_LIBS_ASSET_DIR"
+        cp "$FOUND_SO" "$ASSET_TALLOC"
+        chmod +x "$ASSET_TALLOC"
+        echo "✓ Installed (fallback): $ASSET_TALLOC ($(du -h "$ASSET_TALLOC" | cut -f1))"
+    else
+        echo "! libtalloc.so.2 not found in Termux package — proot will fail at runtime" >&2
     fi
     rm -rf "$TALLOC_TMPDIR"
 fi
