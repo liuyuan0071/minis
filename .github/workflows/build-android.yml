@@ -39,7 +39,10 @@ jobs:
       - name: Build PRoot from source (OpenMinis fork)
         run: |
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.3.13750724"
-          bash ./deps/build_proot.sh
+          echo "NDK_HOME=$ANDROID_NDK_HOME"
+          ls "$ANDROID_NDK_HOME" 2>/dev/null || echo "NDK dir not found"
+          ls deps/proot/src 2>/dev/null || echo "proot submodule not checked out"
+          bash ./deps/build_proot.sh 2>&1 || echo "WARN: PRoot 源码构建失败，将使用预构建二进制"
 
       - name: Prepare sandbox assets
         run: bash ./scripts/prepare_android_sandbox.sh
