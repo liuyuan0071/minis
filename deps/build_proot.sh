@@ -269,6 +269,17 @@ build_proot() {
             || log_error "Could not clone OpenMinis/proot into $PROOT_DIR"
     fi
 
+    # [T-quiet-exit] The fork enables talloc_enable_leak_report() in
+    # src/cli/cli.c (main()), which dumps the whole talloc hierarchy to
+    # stderr on EVERY exit — pure noise that floods the terminal after each
+    # shell session and hides the real failure reason. Comment it out so a
+    # release build exits clean.
+    if grep -q 'talloc_enable_leak_report' "$PROOT_DIR/src/cli/cli.c"; then
+        sed -i 's/^[[:space:]]*talloc_enable_leak_report();/\/\/ talloc_enable_leak_report(); \/* disabled for Minis release builds *\//' \
+            "$PROOT_DIR/src/cli/cli.c"
+        log_info "Disabled talloc_enable_leak_report() (exit noise)"
+    fi
+
     log_info "Building proot (aarch64)..."
 
     # proot's GNUmakefile has a quirk where `-f <path>` out-of-tree builds
