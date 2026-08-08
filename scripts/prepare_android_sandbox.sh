@@ -34,8 +34,13 @@ PROOT_VERSION="5.1.107.89"
 PROOT_DEB_URL="https://packages.termux.dev/apt/termux-main/pool/main/p/proot/proot_${PROOT_VERSION}_aarch64.deb"
 
 # Termux libtalloc — proot links against libtalloc.so.2 dynamically
+# NOTE on the pool path: Termux uses Debian's pool layout for package names
+# longer than 4 chars — first two letters + full name. The directory is
+# pool/main/libt/libtalloc/, NOT pool/main/t/talloc/ (that 404s, verified
+# 2026-08-08; a missing libtalloc silently skipped patching and shipped an
+# APK whose proot could not load — "libtalloc.so.2 not found" on device).
 TALLOC_VERSION="2.4.3"
-TALLOC_DEB_URL="https://packages.termux.dev/apt/termux-main/pool/main/t/talloc/libtalloc_${TALLOC_VERSION}_aarch64.deb"
+TALLOC_DEB_URL="https://packages.termux.dev/apt/termux-main/pool/main/libt/libtalloc/libtalloc_${TALLOC_VERSION}_aarch64.deb"
 
 mkdir -p "$ASSETS_DIR"
 
@@ -69,6 +74,14 @@ fi
 # --- PRoot binary ---
 if [ -f "$PROOT_FILE" ]; then
     echo "✓ PRoot binary already exists: $PROOT_FILE"
+    # build_proot.sh installs to both assets/ and jniLibs/; if it only got as
+    # far as the assets copy, propagate it here instead of re-downloading.
+    if [ ! -f "$JNILIBS_PROOT" ]; then
+        mkdir -p "$JNILIBS_DIR"
+        cp "$PROOT_FILE" "$JNILIBS_PROOT"
+        chmod +x "$JNILIBS_PROOT"
+        echo "✓ Copied existing proot to $JNILIBS_PROOT"
+    fi
 else
     echo "Downloading PRoot ${PROOT_VERSION} aarch64 from Termux..."
 
@@ -246,6 +259,54 @@ else
         echo "! libtalloc.so.2 not found in Termux package — proot will fail at runtime" >&2
     fi
     rm -rf "$TALLOC_TMPDIR"
+fi
+
+# --- Final hard check: never ship a proot that will fail on device ---
+# Two acceptable end states for jniLibs/libproot.so:
+#   (a) static proot (no libtalloc DT_NEEDED) — produced by build_proot.sh
+#   (b) dynamic proot whose DT_NEEDED was rewritten to libtalloc.so, with
+#       libtalloc.so shipped in jniLibs next to it — the patchelf path above
+# Anything else (still asking for libtalloc.so.2) will fail at runtime on
+# modern Android: the namespace-isolated linker ignores LD_LIBRARY_PATH for
+# exec'd binaries, so only nativeLibraryDir is searched. Fail the build here
+# instead of silently shipping a broken APK.
+echo "=== Final check: proot linkage ==="
+if [ -f "$JNILIBS_PROOT" ]; then
+    # The app's shell ALWAYS passes --native-offload=<socket>:<handlers>
+    # (PRootKernel.kt / PersistentShell.kt / TerminalSession.kt). Stock Termux
+    # proot does NOT implement that option and would exit with "unrecognized
+    # option" at startup, so verify the OpenMinis fork extension is compiled
+    # in — this is what makes the sandbox actually usable.
+    if strings "$JNILIBS_PROOT" 2>/dev/null | grep -q -- '--native-offload'; then
+        echo "OK: proot has the native-offload extension (OpenMinis fork)"
+    else
+        echo "ERROR: proot lacks --native-offload (app requires it) — sandbox would fail at startup" >&2
+        exit 1
+    fi
+    if [ "$HAVE_PATCHELF" = "1" ]; then
+        NEEDED=$(patchelf --print-needed "$JNILIBS_PROOT" 2>/dev/null || true)
+        echo "libproot.so DT_NEEDED: ${NEEDED:-<none/static>}"
+        if printf '%s\n' "$NEEDED" | grep -q 'libtalloc\.so\.2'; then
+            echo "ERROR: libproot.so still needs libtalloc.so.2 — would fail on device" >&2
+            exit 1
+        fi
+        if printf '%s\n' "$NEEDED" | grep -q 'libtalloc\.so'; then
+            if [ ! -f "$JNILIBS_DIR/libtalloc.so" ]; then
+                echo "ERROR: libproot.so needs libtalloc.so but it was not shipped in jniLibs" >&2
+                exit 1
+            fi
+            echo "OK: needs libtalloc.so and it is present in jniLibs"
+        else
+            echo "OK: no libtalloc dependency (static build)"
+        fi
+    else
+        if strings "$JNILIBS_PROOT" 2>/dev/null | grep -q 'libtalloc\.so\.2'; then
+            echo "ERROR: proot needs libtalloc.so.2 and patchelf is unavailable — cannot guarantee a working APK" >&2
+            exit 1
+        fi
+    fi
+else
+    echo "WARN: no libproot.so in jniLibs — nothing to verify"
 fi
 
 echo ""

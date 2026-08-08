@@ -74,7 +74,10 @@ resolve_ndk() {
         return
     fi
 
-    # Auto-detect highest available NDK in the SDK folder
+    # Auto-detect highest available NDK in the SDK folder (macOS default path
+    # + common Linux CI locations). CI runners expose $ANDROID_HOME /
+    # $ANDROID_SDK_ROOT, so falling back to those saves us when the exported
+    # $ANDROID_NDK_HOME happens to be empty/wrong.
     local base="$HOME/Library/Android/sdk/ndk"
     if [ -d "$base" ]; then
         local latest
@@ -84,6 +87,16 @@ resolve_ndk() {
             return
         fi
     fi
+    for sdk in "$ANDROID_SDK_ROOT" "$ANDROID_HOME"; do
+        if [ -n "$sdk" ] && [ -d "$sdk/ndk" ]; then
+            local latest
+            latest=$(ls "$sdk/ndk" 2>/dev/null | sort -V | tail -n 1)
+            if [ -n "$latest" ]; then
+                echo "$sdk/ndk/$latest"
+                return
+            fi
+        fi
+    done
 
     log_error "Android NDK not found. Set \$ANDROID_NDK_HOME or install via Android Studio."
 }
@@ -133,7 +146,15 @@ fetch_talloc() {
     local tarball="$BUILD_DIR/talloc-${TALLOC_VERSION}.tar.gz"
     mkdir -p "$BUILD_DIR"
     if [ ! -f "$tarball" ]; then
-        curl -fsSL "$TALLOC_TARBALL_URL" -o "$tarball"
+        # Primary source is download.samba.org; it is occasionally slow or
+        # unreachable from CI runners. Ubuntu's archive carries the same
+        # upstream tarball (talloc_<ver>.orig.tar.gz) and is a fast fallback.
+        if ! curl -fsSL --connect-timeout 15 --max-time 90 "$TALLOC_TARBALL_URL" -o "$tarball"; then
+            log_warn "download.samba.org failed — trying Ubuntu archive mirror..."
+            curl -fsSL --connect-timeout 15 --max-time 90 \
+                "http://archive.ubuntu.com/ubuntu/pool/main/t/talloc/talloc_${TALLOC_VERSION}.orig.tar.gz" \
+                -o "$tarball"
+        fi
     fi
 
     local tmp
@@ -238,7 +259,14 @@ build_talloc() {
 # ----------------------------------------------------------------------------
 build_proot() {
     if [ ! -d "$PROOT_DIR/src" ]; then
-        log_error "PRoot source missing at $PROOT_DIR. Did you clone OpenMinis/proot?"
+        # deps/proot is registered in .gitmodules but its gitlink was never
+        # committed in this repo, so `git submodule update` has nothing to
+        # clone. Fetch the fork directly (shallow) to stay self-sufficient.
+        log_warn "PRoot source missing at $PROOT_DIR — cloning OpenMinis/proot (master, shallow)..."
+        rm -rf "$PROOT_DIR"
+        git clone --depth 1 --branch master \
+            https://github.com/OpenMinis/proot.git "$PROOT_DIR" \
+            || log_error "Could not clone OpenMinis/proot into $PROOT_DIR"
     fi
 
     log_info "Building proot (aarch64)..."

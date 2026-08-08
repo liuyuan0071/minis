@@ -21,7 +21,10 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build make binutils
+          # patchelf is REQUIRED by prepare_android_sandbox.sh: it rewrites
+          # proot's DT_NEEDED from libtalloc.so.2 → libtalloc.so so Android's
+          # namespace-isolated linker can resolve it from nativeLibraryDir.
+          sudo apt-get install -y ninja-build make binutils patchelf
           echo "构建工具就绪"
 
       - name: Set up JDK 17
@@ -41,7 +44,8 @@ jobs:
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.3.13750724"
           echo "NDK_HOME=$ANDROID_NDK_HOME"
           ls "$ANDROID_NDK_HOME" 2>/dev/null || echo "NDK dir not found"
-          ls deps/proot/src 2>/dev/null || echo "proot submodule not checked out"
+          # build_proot.sh clones OpenMinis/proot itself if deps/proot/src is
+          # absent (the submodule gitlink was never committed in this repo).
           bash ./deps/build_proot.sh 2>&1 || echo "WARN: PRoot 源码构建失败，将使用预构建二进制"
 
       - name: Prepare sandbox assets
