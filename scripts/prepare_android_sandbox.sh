@@ -47,6 +47,7 @@ mkdir -p "$ASSETS_DIR"
 ROOTFS_FILE="$ASSETS_DIR/alpine-minirootfs.tar.gz"
 PROOT_FILE="$ASSETS_DIR/proot-aarch64"
 JNILIBS_DIR="$PROJECT_ROOT/src/android/app/src/main/jniLibs/arm64-v8a"
+JNILIBS_PROOT="$JNILIBS_DIR/libproot.so"
 
 # --- Alpine rootfs ---
 if [ -f "$ROOTFS_FILE" ]; then
@@ -180,7 +181,6 @@ command -v patchelf >/dev/null 2>&1 && HAVE_PATCHELF=1
 
 # Does the proot we're shipping actually need libtalloc? (Static builds from
 # build_proot.sh carry no libtalloc DT_NEEDED and can skip all of this.)
-JNILIBS_PROOT="$JNILIBS_DIR/libproot.so"
 PROOT_NEEDS_TALLOC=0
 if [ -f "$JNILIBS_PROOT" ]; then
     if [ "$HAVE_PATCHELF" = "1" ]; then
