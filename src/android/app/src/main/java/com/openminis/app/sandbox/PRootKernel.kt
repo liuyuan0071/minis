@@ -932,11 +932,17 @@ object PRootKernel {
     }
 
     /**
-     * Get the cache directory for PROOT_TMP_DIR.
-     * Must be called after boot().
+     * Get the directory for PROOT_TMP_DIR — where proot extracts its embedded
+     * loader before exec'ing the tracee.
+     *
+     * MUST be an executable location: Android mounts the app's cache dir
+     * (`/data/user/0/<pkg>/cache`) with `noexec` since Android 7, so a loader
+     * staged there fails with EACCES at execve ("Permission denied" right at
+     * shell start). `filesDir` is executable (the rootfs lives there and runs
+     * fine). Must be called after boot().
      */
     internal fun getProotTmpDir(context: Context): File {
-        val tmpDir = File(context.cacheDir, "proot-tmp")
+        val tmpDir = File(context.filesDir, "proot-tmp")
         tmpDir.mkdirs()
         return tmpDir
     }
