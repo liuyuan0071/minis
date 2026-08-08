@@ -21,7 +21,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build make binutils patchelf zstd
+          sudo apt-get install -y ninja-build make binutils
           echo "构建工具就绪"
 
       - name: Set up JDK 17
@@ -39,41 +39,16 @@ jobs:
       - name: Build PRoot from source (OpenMinis fork)
         run: |
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.3.13750724"
-          bash ./deps/build_proot.sh || echo "PRoot 源码构建失败，尝试使用预构建二进制"
+          bash ./deps/build_proot.sh
 
-      - name: Prepare sandbox assets (alpine rootfs only)
-        run: |
-          bash ./scripts/prepare_android_sandbox.sh || echo "沙箱资源准备失败（非阻断）"
-          echo "=== DIAG: jniLibs listing ==="
-          ls -lh src/android/app/src/main/jniLibs/arm64-v8a/ 2>/dev/null || echo "(no jniLibs dir)"
-          echo "=== DIAG: proot NEEDED ==="
-          patchelf --print-needed src/android/app/src/main/jniLibs/arm64-v8a/libproot.so 2>/dev/null || echo "(patchelf not available or proot missing)"
-          echo "=== DIAG: native-libs asset ==="
-          ls -lh src/android/app/src/main/assets/native-libs/ 2>/dev/null || echo "(no native-libs asset dir)"
+      - name: Prepare sandbox assets
+        run: bash ./scripts/prepare_android_sandbox.sh
 
       - name: Build APK
         working-directory: src/android
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleRelease --no-daemon --stacktrace
-
-      - name: Verify APK contents
-        run: |
-          echo "=== APK native libs verification ==="
-          APK=$(find src/android/app/build/outputs/apk/release -name "*.apk" | head -1)
-          echo "APK: $APK"
-          unzip -l "$APK" | grep -E 'lib/arm64-v8a/' || echo "(no native libs in APK)"
-          echo "=== Check libtalloc.so in APK ==="
-          if unzip -l "$APK" | grep -q 'libtalloc.so'; then
-            echo "✓ libtalloc.so IS in the APK (patchelf path worked)"
-          else
-            echo "✗ libtalloc.so NOT in APK — will check asset staging"
-            unzip -l "$APK" | grep -E 'assets/native-libs/' || echo "(no native-libs assets either)"
-          fi
-          echo "=== Check libproot.so NEEDED inside APK ==="
-          cd /tmp && unzip -o "$APK" lib/arm64-v8a/libproot.so >/dev/null 2>&1
-          patchelf --print-needed /tmp/lib/arm64-v8a/libproot.so 2>/dev/null || echo "(patchelf not available)"
-          rm -rf /tmp/lib
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
