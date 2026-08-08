@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.io.FilterInputStream
 import java.io.InputStream
 import java.nio.charset.Charset
@@ -160,6 +161,14 @@ class RootfsManager private constructor(private val context: Context) {
     val nativeLibDir: File = File(context.applicationInfo.nativeLibraryDir)
 
     /**
+     * Private writable dir for runtime-staged shared objects that Android's
+     * NativeLibraryHelper refuses to extract (it only unpacks entries whose
+     * filename ends with ".so", so "libtalloc.so.2" must be staged here from
+     * the bundled asset instead). Added to LD_LIBRARY_PATH by PRootKernel.
+     */
+    val runtimeLibDir: File = File(context.filesDir, "native-libs")
+
+    /**
      * Verify PRoot binary is available in the native library directory.
      */
     suspend fun installProotIfNeeded() = withContext(Dispatchers.IO) {
@@ -174,8 +183,49 @@ class RootfsManager private constructor(private val context: Context) {
         // (the binary carries no DT_NEEDED for libtalloc.so), so there is no
         // shared object to version-rename. Older builds shipped libtalloc.so
         // in jniLibs and copied it here as libtalloc.so.2.
+        //
+        // Dynamic-build fallback (prepare_android_sandbox.sh): when the proot
+        // binary carries DT_NEEDED libtalloc.so.2, the APK bundles it under
+        // assets/native-libs/libtalloc.so.2 (jniLibs can't deliver it —
+        // NativeLibraryHelper skips anything not ending in ".so"). Stage it
+        // into runtimeLibDir so PRootKernel can prepend that dir to
+        // LD_LIBRARY_PATH. Static builds don't ship the asset → no-op.
+        stageRuntimeLibraryIfNeeded()
 
         Log.d(TAG, "PRoot binary available at $prootBinary")
+    }
+
+    /**
+     * Copy assets/native-libs/libtalloc.so.2 (if present) into
+     * [runtimeLibDir] so the dynamic linker can resolve it at proot exec.
+     * Idempotent; skips silently when the asset is absent (static proot).
+     */
+    private fun stageRuntimeLibraryIfNeeded() {
+        val assetRel = "native-libs/libtalloc.so.2"
+        val out = File(runtimeLibDir, "libtalloc.so.2")
+        val hasAsset = try {
+            context.assets.open(assetRel).use { true }
+        } catch (e: Exception) {
+            false
+        }
+        if (!hasAsset) return
+
+        if (out.exists() && out.canExecute() && out.length() > 0) {
+            Log.d(TAG, "runtime lib already staged: ${out.absolutePath}")
+            return
+        }
+
+        runtimeLibDir.mkdirs()
+        try {
+            context.assets.open(assetRel).use { input ->
+                FileOutputStream(out).use { input.copyTo(it) }
+            }
+            out.setReadable(true, false)
+            out.setExecutable(true, false)
+            Log.i(TAG, "Staged runtime lib from asset: ${out.absolutePath} (${out.length()} bytes)")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to stage $assetRel: ${e.message}")
+        }
     }
 
     /**

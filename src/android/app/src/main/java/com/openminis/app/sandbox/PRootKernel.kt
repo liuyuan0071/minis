@@ -31,6 +31,25 @@ object PRootKernel {
     var nativeLibDir: String = ""
         private set
 
+    /**
+     * Writable dir for runtime-staged .so.<version> libs (e.g. libtalloc.so.2)
+     * that Android's NativeLibraryHelper refuses to extract. Prepended to
+     * LD_LIBRARY_PATH via [ldLibraryPath] when it contains libtalloc.so.2.
+     */
+    var runtimeLibDir: String = ""
+        private set
+
+    /**
+     * Effective LD_LIBRARY_PATH: prepends [runtimeLibDir] when
+     * libtalloc.so.2 is staged there, otherwise falls back to
+     * [nativeLibDir] (static-proot builds carry no libtalloc dependency).
+     */
+    val ldLibraryPath: String
+        get() = if (runtimeLibDir.isNotEmpty() &&
+            File(runtimeLibDir, "libtalloc.so.2").exists())
+            "$runtimeLibDir${File.pathSeparator}$nativeLibDir"
+        else nativeLibDir
+
     /** Path to PRoot loader binary (64-bit). */
     var prootLoaderPath: String = ""
         private set
@@ -77,8 +96,12 @@ object PRootKernel {
 
         // LD_LIBRARY_PATH for the extracted native libs. talloc used to be
         // staged here under a versioned name; deps/build_proot.sh now links it
-        // statically, so only the native lib dir is needed.
+        // statically, so only the native lib dir is needed. Dynamic-build
+        // fallback (prepare_android_sandbox.sh) stages libtalloc.so.2 into
+        // runtimeLibDir (see RootfsManager.stageRuntimeLibraryIfNeeded);
+        // ldLibraryPath prepends it automatically.
         nativeLibDir = rootfsManager.nativeLibDir.absolutePath
+        runtimeLibDir = rootfsManager.runtimeLibDir.absolutePath
 
         // PROOT_LOADER / PROOT_LOADER_32 overrides. The loader is bundled into
         // the proot binary (extracted via /proc/self/fd at runtime), so these

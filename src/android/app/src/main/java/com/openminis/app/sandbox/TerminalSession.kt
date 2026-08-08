@@ -127,8 +127,8 @@ class TerminalSession(private val context: Context) {
                 // Environment in KEY=VALUE form
                 val envMap = LinkedHashMap<String, String>()
                 envMap["PROOT_TMP_DIR"] = PRootKernel.getProotTmpDir(context).absolutePath
-                if (PRootKernel.nativeLibDir.isNotEmpty())
-                    envMap["LD_LIBRARY_PATH"] = PRootKernel.nativeLibDir
+                if (PRootKernel.ldLibraryPath.isNotEmpty())
+                    envMap["LD_LIBRARY_PATH"] = PRootKernel.ldLibraryPath
                 if (PRootKernel.prootLoaderPath.isNotEmpty())
                     envMap["PROOT_LOADER"] = PRootKernel.prootLoaderPath
                 if (PRootKernel.prootLoader32Path.isNotEmpty())

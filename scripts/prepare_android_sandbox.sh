@@ -122,7 +122,13 @@ else
 fi
 
 # --- libtalloc (PRoot runtime dependency) ---
-TALLOC_SO="$JNILIBS_DIR/libtalloc.so.2"
+# NOTE: we stage libtalloc into an app *asset* directory, not jniLibs.
+# Android's NativeLibraryHelper only extracts entries whose filename ends
+# with ".so"; "libtalloc.so.2" ends with ".2" and would never be unpacked
+# to nativeLibraryDir. Assets are extracted Writer-side at first boot by
+# RootfsManager.stageRuntimeLibraryIfNeeded() into filesDir/native-libs/.
+NATIVE_LIBS_ASSET_DIR="$ASSETS_DIR/native-libs"
+TALLOC_SO="$NATIVE_LIBS_ASSET_DIR/libtalloc.so.2"
 if [ -f "$TALLOC_SO" ]; then
     echo "✓ libtalloc.so.2 already exists: $TALLOC_SO"
 else
@@ -140,6 +146,7 @@ else
         # Find libtalloc.so.2 — it lives under ./system/lib/ or ./data/data/... on Termux
         FOUND_SO=$(find "$TALLOC_TMPDIR" -name "libtalloc.so.2*" -type f 2>/dev/null | head -1)
         if [ -n "$FOUND_SO" ]; then
+            mkdir -p "$NATIVE_LIBS_ASSET_DIR"
             cp "$FOUND_SO" "$TALLOC_SO"
             chmod +x "$TALLOC_SO"
             echo "✓ Installed: $TALLOC_SO ($(du -h "$TALLOC_SO" | cut -f1))"
