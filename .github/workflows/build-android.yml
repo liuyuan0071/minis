@@ -51,6 +51,27 @@ jobs:
       - name: Prepare sandbox assets
         run: bash ./scripts/prepare_android_sandbox.sh
 
+      - name: Generate fixed debug keystore (if missing)
+        # [T-stable-signing] Keystore committed at src/android/keystore/
+        # makes every CI build produce the SAME signature, so the emulator/
+        # device auto-install loop can `adb install -r` (overwrite) instead
+        # of failing with INSTALL_FAILED_UPDATE_INCOMPATIBLE. First build
+        # generates it here and Upload APK also uploads the keystore; we
+        # download it once and commit it into the repo. Later builds see the
+        # committed file and reuse it.
+        run: |
+          KS="src/android/keystore/debug.keystore"
+          if [ -f "$KS" ]; then
+            echo "✓ keystore already committed, reusing: $KS"
+          else
+            mkdir -p src/android/keystore
+            keytool -genkeypair -v -keystore "$KS" -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+            echo "✓ generated keystore: $KS"
+          fi
+
       - name: Build APK
         working-directory: src/android
         run: |
@@ -62,3 +83,9 @@ jobs:
         with:
           name: app-release-apk
           path: src/android/app/build/outputs/apk/release/*.apk
+
+      - name: Upload fixed keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: keystore-debug
+          path: src/android/keystore/debug.keystore

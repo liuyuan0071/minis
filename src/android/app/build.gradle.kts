@@ -95,6 +95,26 @@ android {
         }
     }
 
+    signingConfigs {
+        // [T-stable-signing] A FIXED debug keystore committed at
+        // src/android/keystore/debug.keystore. CI (GitHub Actions) and local
+        // builds share the same keystore, so `adb install -r` can overwrite
+        // install without uninstalling (a fresh runner-generated debug
+        // keystore would change the signature every build and force
+        // INSTALL_FAILED_UPDATE_INCOMPATIBLE). Falls back to the platform
+        // debug config if the keystore file is absent (e.g. a fresh clone
+        // before the key was generated).
+        create("stable") {
+            val keystoreFile = file("../keystore/debug.keystore")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+    }
+
     buildTypes {
         release {
             // [T-gitee-go-build] R8 was disabled on the Gitee Go runner (2c/4Gi
@@ -112,7 +132,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            // [T-stable-signing] Prefer the committed fixed keystore; fall
+            // back to debug signing when it is not present yet.
+            signingConfig = if (file("../keystore/debug.keystore").exists()) {
+                signingConfigs.getByName("stable")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
