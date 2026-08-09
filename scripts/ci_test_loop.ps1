@@ -4,13 +4,16 @@
 #   2. 轮询 gh run 直到完成
 #   3. gh run download 下载 APK
 #   4. adb install -r 安装到 MuMu (127.0.0.1:16384)
-#   5. adb 启动 App
+#   5. adb 启动 App + minis://open_terminal deep link（PRoot 懒加载，
+#      需打开终端才真正 boot + PTY 启动）
 #   6. logcat 冒烟断言（无 FATAL / PRootKernel booted / PTY started）
 #   7. 输出 PASS / FAIL（可被外部循环调用，失败时返回退出码 1）
 #
 # 用法（在仓库根目录）:
 #   powershell -File scripts/ci_test_loop.ps1 -Repo liuyuan0071/minis
 #   powershell -File scripts/ci_test_loop.ps1 -AdbDevice 127.0.0.1:16384 -SkipPush
+#   # 本地已有 APK 时跳过 gh 轮询+下载，直接安装测试:
+#   powershell -File scripts/ci_test_loop.ps1 -SkipPush -ApkPath "C:\Users\888\Downloads\app-release#28.apk"
 #
 # 说明:
 #   - 不执行任何删除操作（用户环境拦截 Remove-Item，见 trae）
@@ -23,6 +26,7 @@ param(
     [string]$Adb = "C:\tools\android\platform-tools\adb.exe",
     [string]$AdbDevice = "127.0.0.1:16384",
     [string]$OutDir = "raw\ci-download",
+    [string]$ApkPath = "",
     [switch]$SkipPush,
     [int]$PollSeconds = 15,
     [int]$MaxWaitMinutes = 25
@@ -51,42 +55,48 @@ if (-not $SkipPush) {
     git push github master 2>&1 | Out-Host
 }
 
-# --- 2. 轮询最新的 push run ---
-Write-Host "`n== Step 2/6: 轮询 GitHub Actions run ==" -ForegroundColor Green
-$runId = ""
-for ($i = 0; $i -lt [math]::Ceiling($MaxWaitMinutes * 60 / $PollSeconds); $i++) {
-    $runs = & $Gh run list --repo $Repo --limit 1 --json databaseId,status,conclusion,headSha,event 2>$null | ConvertFrom-Json
-    if ($runs -and $runs.Count -gt 0) {
-        $runId = $runs[0].databaseId
-        $status = $runs[0].status
-        $conclusion = $runs[0].conclusion
-        $event = $runs[0].event
-        Write-Host ("  run #{0} status={1} conclusion={2} event={3}" -f $runId, $status, ($conclusion -join ""), $event)
-        if ($status -eq "completed") {
-            if ($conclusion -eq "success" -and $event -eq "push") { break }
-            if ($event -eq "push") {
-                # 最新 push run 失败 → 中止
-                Write-Host "  FAIL: 最新 push run #$runId conclusion=$conclusion" -ForegroundColor Red
-                exit 1
+# --- 2+3. 获取 APK：指定 -ApkPath 时用本地文件（跳过 gh 轮询+下载），
+#           否则轮询最新 push run 并下载 ---
+if ($ApkPath) {
+    if (-not (Test-Path $ApkPath)) { Write-Error "APK not found: $ApkPath"; exit 1 }
+    Write-Host "`n== Step 2-3/6: 使用本地 APK（跳过 gh 轮询+下载）==" -ForegroundColor Green
+    $apk = Get-Item $ApkPath
+} else {
+    Write-Host "`n== Step 2/6: 轮询 GitHub Actions run ==" -ForegroundColor Green
+    $runId = ""
+    for ($i = 0; $i -lt [math]::Ceiling($MaxWaitMinutes * 60 / $PollSeconds); $i++) {
+        $runs = & $Gh run list --repo $Repo --limit 1 --json databaseId,status,conclusion,headSha,event 2>$null | ConvertFrom-Json
+        if ($runs -and $runs.Count -gt 0) {
+            $runId = $runs[0].databaseId
+            $status = $runs[0].status
+            $conclusion = $runs[0].conclusion
+            $event = $runs[0].event
+            Write-Host ("  run #{0} status={1} conclusion={2} event={3}" -f $runId, $status, ($conclusion -join ""), $event)
+            if ($status -eq "completed") {
+                if ($conclusion -eq "success" -and $event -eq "push") { break }
+                if ($event -eq "push") {
+                    # 最新 push run 失败 → 中止
+                    Write-Host "  FAIL: 最新 push run #$runId conclusion=$conclusion" -ForegroundColor Red
+                    exit 1
+                }
             }
+        } else {
+            Write-Host "  (no run yet, waiting...)"
         }
-    } else {
-        Write-Host "  (no run yet, waiting...)"
+        Start-Sleep -Seconds $PollSeconds
     }
-    Start-Sleep -Seconds $PollSeconds
-}
-if (-not $runId) { Write-Error "Timed out waiting for a run"; exit 1 }
-if ((& $Gh run view $runId --repo $Repo --json status --jq '.status' 2>$null) -ne "completed") {
-    Write-Host "  FAIL: run #$runId did not complete in $MaxWaitMinutes min" -ForegroundColor Red
-    exit 1
-}
+    if (-not $runId) { Write-Error "Timed out waiting for a run"; exit 1 }
+    if ((& $Gh run view $runId --repo $Repo --json status --jq '.status' 2>$null) -ne "completed") {
+        Write-Host "  FAIL: run #$runId did not complete in $MaxWaitMinutes min" -ForegroundColor Red
+        exit 1
+    }
 
-# --- 3. 下载 APK ---
-Write-Host "`n== Step 3/6: 下载 APK (run #$runId) ==" -ForegroundColor Green
-if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir | Out-Null }
-& $Gh run download $runId --repo $Repo --dir $OutDir 2>&1 | Out-Host
-$apk = Get-ChildItem $OutDir -Recurse -Filter *.apk | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-if (-not $apk) { Write-Error "No APK found in $OutDir"; exit 1 }
+    Write-Host "`n== Step 3/6: 下载 APK (run #$runId) ==" -ForegroundColor Green
+    if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir | Out-Null }
+    & $Gh run download $runId --repo $Repo --dir $OutDir 2>&1 | Out-Host
+    $apk = Get-ChildItem $OutDir -Recurse -Filter *.apk | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if (-not $apk) { Write-Error "No APK found in $OutDir"; exit 1 }
+}
 Write-Host "  APK: $($apk.FullName) ($([math]::Round($apk.Length/1MB,1)) MB)" -ForegroundColor Yellow
 
 # --- 4. 安装到 MuMu（签名稳定 → install -r 覆盖） ---
@@ -106,6 +116,11 @@ Write-Host "`n== Step 5/6: 启动 App ==" -ForegroundColor Green
 & $Adb -s $AdbDevice shell am force-stop com.openminis.app.workhelper 2>$null
 Start-Sleep -Seconds 2
 & $Adb -s $AdbDevice shell am start -n com.openminis.app.workhelper/com.openminis.app.MainActivityIconAuto | Out-Host
+Start-Sleep -Seconds 10
+# PRoot boots lazily — the launcher start alone never reaches the sandbox.
+# Open the terminal via the minis://open_terminal deep link so PRoot kernel
+# boot + PTY start actually happen before the smoke assertions below.
+& $Adb -s $AdbDevice shell am start -d "minis://open_terminal" | Out-Host
 Start-Sleep -Seconds 15
 
 # --- 6. 冒烟断言 ---

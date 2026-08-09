@@ -8256,6 +8256,12 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
         // SELECT + listFiles, no network.
         skillRepository?.reloadFromDisk()
         val subAgentFragment = _subAgentPromptFragment.value
+        // [T-subagent-list-in-prompt] Ordinary (non-bound) sessions see the
+        // list of available sub-agents (id + description) so the model can
+        // summon them via subagent_invoke, and learn they can CREATE new
+        // ones by writing an agent .md under /var/minis/agents/.
+        val availableSubAgentsFragment = if (_subAgentId.value == null)
+            subAgentRepository?.availableSubAgentsFragment() else null
         // [T-subagent-skill-subset] When the session is bound to a sub-agent
         // with an explicit skill allowlist, restrict the disclosed skills to
         // that subset (the sub-agent "owns" a narrow tool surface instead of
@@ -8293,6 +8299,10 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
             if (skillFragment != null) {
                 append("\n\n")
                 append(skillFragment)
+            }
+            if (availableSubAgentsFragment != null) {
+                append("\n\n")
+                append(availableSubAgentsFragment)
             }
             if (mcpFragment != null) {
                 append("\n\n")
