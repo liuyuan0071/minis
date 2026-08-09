@@ -26,6 +26,10 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
+# EXCEPTION: the fixed CI debug keystore MUST be committed so every build
+# shares one signature (adb install -r overwrite works). Debug-only, standard
+# android/android credentials — not a secret.
+!src/android/keystore/debug.keystore
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json
