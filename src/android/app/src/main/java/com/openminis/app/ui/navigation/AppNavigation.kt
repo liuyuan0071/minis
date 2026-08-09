@@ -64,6 +64,7 @@ import com.openminis.app.ui.settings.MountedFoldersScreen
 import com.openminis.app.ui.settings.SharedFolderDetailScreen
 import com.openminis.app.ui.settings.SharedFoldersScreen
 import com.openminis.app.ui.settings.SkillsManagementScreen
+import com.openminis.app.ui.subagents.SubAgentsScreen
 import com.openminis.app.data.repository.EnvVarRepository
 import com.openminis.app.data.repository.MemoryRepository
 import com.openminis.app.data.repository.SkillRepository

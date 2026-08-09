@@ -29,6 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -62,7 +64,7 @@ fun SubAgentsScreen(
     onOpenSession: (sessionId: String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val snackbarHostState = androidx.compose.material3.remember { androidx.compose.material3.SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     var agents by remember { mutableStateOf<List<SubAgentEntity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var showImportDialog by remember { mutableStateOf(false) }
