@@ -372,7 +372,7 @@ class SubAgentRepository(private val context: Context) {
 
     /**
      * Install the pre-packaged 数字员工 agents shipped under
-     * `assets/bundled-agents/*.md` (Claude Code agent shape, same as
+     * `assets/bundled-agents/` (Claude Code agent shape, same as
      * [importFromContent]). Idempotent: an id that already exists is
      * skipped, so a user can delete/disable a bundled agent and it won't
      * be re-installed on the next launch. Mirrors
