@@ -28,6 +28,7 @@ import com.openminis.app.data.repository.ProviderRepository
 import com.openminis.app.data.repository.WebAppShortcutRepository
 import com.openminis.app.data.repository.MCPRepository
 import com.openminis.app.data.repository.SkillRepository
+import com.openminis.app.data.repository.SubAgentRepository
 import com.openminis.app.notification.BackgroundTaskNotifier
 import com.openminis.app.logging.AppLogger
 import com.openminis.app.network.NetworkMonitor
@@ -74,6 +75,8 @@ class MinisApp : Application(), ImageLoaderFactory {
     lateinit var mcpRepository: MCPRepository
         private set
     lateinit var memoryRepository: MemoryRepository
+        private set
+    lateinit var subAgentRepository: SubAgentRepository
         private set
     lateinit var webAppShortcutRepository: WebAppShortcutRepository
         private set
@@ -294,6 +297,7 @@ class MinisApp : Application(), ImageLoaderFactory {
         skillRepository = SkillRepository(this)
         mcpRepository = MCPRepository(this)
         memoryRepository = MemoryRepository(java.io.File(filesDir, "minis-global/memory"))
+        subAgentRepository = SubAgentRepository(this)
         webAppShortcutRepository = WebAppShortcutRepository(database.webAppShortcutDao())
 
         // [T-soul-md] Seed SOUL.md with the default content on first launch

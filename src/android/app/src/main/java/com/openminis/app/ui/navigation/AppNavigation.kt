@@ -215,6 +215,7 @@ fun AppNavigation(
     skillRepository: SkillRepository? = null,
     mcpRepository: com.openminis.app.data.repository.MCPRepository? = null,
     memoryRepository: MemoryRepository? = null,
+    subAgentRepository: com.openminis.app.data.repository.SubAgentRepository? = null,
     navController: NavHostController = rememberNavController(),
     initialDeepLink: DeepLinkAction? = null,
 ) {
@@ -529,6 +530,7 @@ fun AppNavigation(
                 memoryRepository = memoryRepository,
                 skillRepository = skillRepository,
                 mcpRepository = mcpRepository,
+                subAgentRepository = subAgentRepository,
                 onBack = { navController.safePopBackStack() },
                 // [T-new-chat-menu-entry] Chat-menu "New Chat": same draft-id
                 // funnel as the session list / NewChat deep link — a fresh

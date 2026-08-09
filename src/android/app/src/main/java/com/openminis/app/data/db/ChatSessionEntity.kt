@@ -25,4 +25,9 @@ data class ChatSessionEntity(
     // ("OFF"/"LOW"/"MEDIUM"/"HIGH"/"XHIGH") and represents an explicit user
     // choice that survives cold-start.
     @ColumnInfo(name = "thinking_override") val thinkingOverride: String? = null,
+    // Sub-agent binding (stage-2 feature): when non-null, this session runs
+    // as the named sub-agent (its instructions replace the base system prompt,
+    // its skill subset replaces the global skill list, and its model override
+    // — if any — replaces the session model). null = ordinary session.
+    @ColumnInfo(name = "sub_agent_id") val subAgentId: String? = null,
 )

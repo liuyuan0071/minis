@@ -20,6 +20,11 @@ object AgentTools {
         // attempt those calls. Mirrors the iOS gate at
         // AIChatViewModel.makeAgentTools(memoryEnabled:).
         memoryEnabled: Boolean = true,
+        // [T-subagent-invoke] Include the subagent_invoke tool only for
+        // ordinary (non-sub-agent) sessions — a sub-agent session itself
+        // doesn't need to summon other agents, and Claude Code's Task tool
+        // is likewise only offered to top-level agents.
+        subAgentBound: Boolean = false,
     ): List<AgentToolDefinition> = buildList {
         add(shellExecuteDefinition())
         add(FileReadTool.definition())
@@ -32,6 +37,9 @@ object AgentTools {
         if (memoryEnabled) {
             add(memoryWriteDefinition())
             add(memoryGetDefinition())
+        }
+        if (!subAgentBound) {
+            add(subAgentInvokeDefinition())
         }
     }
 
@@ -128,5 +136,28 @@ object AgentTools {
         ),
         required = listOf("tool_title"),
         propertyOrdering = listOf("tool_title", "scope", "keywords"),
+    )
+
+    /**
+     * [T-subagent-invoke] Claude Code Task-tool analogue: run a registered
+     * sub-agent with a fresh, stateless context (its own instructions as the
+     * system prompt + the given task + optional injected context), and return
+     * its final text. The invoked agent does NOT see the caller's history.
+     */
+    private fun subAgentInvokeDefinition(): AgentToolDefinition = AgentToolDefinition(
+        name = "subagent_invoke",
+        description = "Delegate a well-scoped task to a registered sub-agent. The sub-agent runs with a FRESH context " +
+            "(its own instructions as system prompt — you may not know them) and cannot see this conversation's history. " +
+            "Returns the sub-agent's final answer text. Use for tasks that benefit from a specialist persona / skill subset " +
+            "(code review, research, writing, translation, data analysis, …). The task must be fully self-contained: " +
+            "include every fact the specialist needs, and reference files by absolute paths under /var/minis/.",
+        parameters = mapOf(
+            "tool_title" to AgentToolParam("string", "A concise 5-10 word summary of what this tool call does, shown to the user (e.g. 'Delegate code review to reviewer agent'). Use the same language as the user."),
+            "agent" to AgentToolParam("string", "The sub-agent id (slugified name, e.g. 'code-reviewer'). The id is shown in the Sub-Agents list."),
+            "task" to AgentToolParam("string", "The fully self-contained task description to hand to the sub-agent, including all context and file paths it needs."),
+            "context" to AgentToolParam("string", "Optional extra context to inject (rarely needed since the task should be self-contained)."),
+        ),
+        required = listOf("tool_title", "agent", "task"),
+        propertyOrdering = listOf("tool_title", "agent", "task", "context"),
     )
 }

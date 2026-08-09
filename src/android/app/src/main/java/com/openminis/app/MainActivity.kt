@@ -427,6 +427,7 @@ class MainActivity : ComponentActivity() {
                     skillRepository = app.skillRepository,
                     mcpRepository = app.mcpRepository,
                     memoryRepository = app.memoryRepository,
+                    subAgentRepository = app.subAgentRepository,
                     navController = navController,
                     initialDeepLink = launchDeepLink,
                 )

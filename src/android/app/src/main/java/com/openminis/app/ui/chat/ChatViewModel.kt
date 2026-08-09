@@ -90,6 +90,7 @@ class ChatViewModel(
     val memoryRepository: MemoryRepository? = null,
     val skillRepository: com.openminis.app.data.repository.SkillRepository? = null,
     val mcpRepository: com.openminis.app.data.repository.MCPRepository? = null,
+    val subAgentRepository: com.openminis.app.data.repository.SubAgentRepository? = null,
 ) : ViewModel() {
 
     companion object {
@@ -299,6 +300,7 @@ class ChatViewModel(
             memoryRepository: MemoryRepository?,
             skillRepository: com.openminis.app.data.repository.SkillRepository?,
             mcpRepository: com.openminis.app.data.repository.MCPRepository? = null,
+            subAgentRepository: com.openminis.app.data.repository.SubAgentRepository? = null,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -310,6 +312,7 @@ class ChatViewModel(
                     memoryRepository = memoryRepository,
                     skillRepository = skillRepository,
                     mcpRepository = mcpRepository,
+                    subAgentRepository = subAgentRepository,
                 ) as T
             }
         }
@@ -615,6 +618,30 @@ class ChatViewModel(
     private val _sessionTitle = MutableStateFlow("New Chat")
     val sessionTitle: StateFlow<String> = _sessionTitle.asStateFlow()
 
+    /**
+     * Sub-agent binding (stage-2): id of the sub-agent this session runs as,
+     * or null for an ordinary session. Loaded from the sessions row in
+     * loadSession; drives system-prompt override + skill/tool restriction.
+     */
+    private val _subAgentId = MutableStateFlow<String?>(null)
+    val subAgentId: StateFlow<String?> = _subAgentId.asStateFlow()
+
+    /**
+     * System-prompt fragment for the bound sub-agent (identity + instructions).
+     * null = ordinary session or agent missing/disabled.
+     */
+    private val _subAgentPromptFragment = MutableStateFlow<String?>(null)
+
+    /** Skill ids the bound sub-agent may use; null = inherit all (ordinary
+     *  session semantics). Empty list = no skills allowed. */
+    private val _subAgentAllowedSkills = MutableStateFlow<List<String>?>(null)
+
+    /** Builtin tool names the bound sub-agent may use; null = inherit all. */
+    private val _subAgentAllowedTools = MutableStateFlow<List<String>?>(null)
+
+    /** Optional model override from the sub-agent definition; null = inherit. */
+    private val _subAgentModelOverride = MutableStateFlow<String?>(null)
+
     /** T-chat-title-pill: category drives the icon shown in the sticky title
      *  pill (mirrors SessionRow's categoryStyle lookup). Null on draft sessions
      *  and until LLM title-generation tags the session. */
@@ -741,7 +768,20 @@ class ChatViewModel(
      * fixed list of definition objects, no I/O.
      */
     private val agentTools: List<AgentToolDefinition>
-        get() = AgentTools.makeAgentTools(memoryEnabled = _memoryEnabled.value)
+        get() {
+            val all = AgentTools.makeAgentTools(
+                memoryEnabled = _memoryEnabled.value,
+                // [T-subagent-invoke] A sub-agent session doesn't summon other
+                // agents (mirrors Claude Code offering Task only to top-level).
+                subAgentBound = _subAgentId.value != null,
+            )
+            // [T-subagent-tool-subset] A bound sub-agent with an explicit
+            // builtin-tool allowlist only exposes those tools to the model.
+            // null = inherit all (ordinary session); empty = no builtin tools.
+            val allowed = _subAgentAllowedTools.value
+            if (allowed == null) return all
+            return all.filter { it.name in allowed }
+        }
 
     /**
      * Per-session loop detector. Reset alongside [agentHistory] whenever the
@@ -2952,6 +2992,8 @@ class ChatViewModel(
             _sessionTitle.value = session.title ?: "New Chat"
             _sessionCategory.value = session.category
             _memoryEnabled.value = session.memoryEnabled != 0
+            _subAgentId.value = session.subAgentId
+            hydrateSubAgent(session.subAgentId)
             // T239: hydrate persisted thinking-mode override. null = unset
             // (use OFF as the legacy default); non-null = explicit user
             // choice persisted across cold-start. runCatching guards against
@@ -3241,6 +3283,53 @@ class ChatViewModel(
                     "loadSession.exit",
                     "totalMs=${System.currentTimeMillis() - tHangDiagStart}",
                 )
+            }
+        }
+    }
+
+    /**
+     * Hydrate the bound sub-agent's prompt fragment / skill subset / tool
+     * allowlist / model override into their state flows. Called from
+     * loadSession after the sessions row resolves; a null [agentId] resets
+     * everything back to ordinary-session behaviour.
+     */
+    private fun hydrateSubAgent(agentId: String?) {
+        viewModelScope.launch {
+            if (agentId == null || subAgentRepository == null) {
+                _subAgentPromptFragment.value = null
+                _subAgentAllowedSkills.value = null
+                _subAgentAllowedTools.value = null
+                _subAgentModelOverride.value = null
+                return@launch
+            }
+            _subAgentPromptFragment.value = subAgentRepository.agentPromptFragment(agentId)
+            _subAgentAllowedSkills.value = subAgentRepository.allowedSkillIds(agentId)
+            _subAgentAllowedTools.value = subAgentRepository.allowedBuiltinTools(agentId)
+            _subAgentModelOverride.value = subAgentRepository.modelOverride(agentId)
+            Log.i(TAG, "hydrateSubAgent: bound agent=$agentId prompt=${_subAgentPromptFragment.value?.length ?: 0} chars")
+            // [T-subagent-model-override] If the sub-agent definition pins a
+            // model id, switch the session to it — the sub-agent runs on its
+            // own model rather than the session's. No-op when the override is
+            // absent or doesn't resolve to a configured entry.
+            val override = subAgentRepository.modelOverride(agentId)
+            if (!override.isNullOrBlank()) {
+                val entry = findModelEntry(override)
+                if (entry != null) {
+                    currentModel = entry.model
+                    _modelName.value = entry.model.displayName
+                    _activeEntryId.value = entry.id
+                    val instance = providerRepository.instance(entry.providerInstanceId)
+                    if (instance != null) {
+                        val apiKey = providerRepository.loadApiKey(instance.id)
+                        if (apiKey != null) {
+                            currentProvider = ProviderFactory.create(instance, apiKey, entry.model, context)
+                            _providerName.value = instance.label.ifEmpty { entry.model.provider }
+                            Log.i(TAG, "hydrateSubAgent: model override → ${entry.model.id}")
+                        }
+                    }
+                } else {
+                    Log.w(TAG, "hydrateSubAgent: override model '${override}' not found")
+                }
             }
         }
     }
@@ -7148,6 +7237,7 @@ class ChatViewModel(
             "browser_use" -> executeBrowserUseTool(argsJson)
             "memory_write" -> executeMemoryWriteTool(argsJson)
             "memory_get" -> executeMemoryGetTool(argsJson)
+            "subagent_invoke" -> executeSubAgentInvoke(argsJson)
             else -> ToolExecutionResult("Unknown tool: $name", false)
         }
     }
@@ -7531,6 +7621,67 @@ class ChatViewModel(
         )
         return ToolExecutionResult(result.output, result.success, toolTitle = result.toolTitle)
     }
+
+    /**
+     * [T-subagent-invoke] Delegate a task to a registered sub-agent. Builds a
+     * FRESH, stateless context: the sub-agent's instructions as the system
+     * prompt + a single user message carrying the task (+ optional injected
+     * context), then makes one non-streaming provider call and returns the
+     * agent's final text. The invoked agent cannot see this conversation's
+     * history — callers must include everything needed in [task].
+     */
+    private suspend fun executeSubAgentInvoke(argsJson: String): ToolExecutionResult {
+        val args = try { JSONObject(argsJson) } catch (_: Exception) { return ToolExecutionResult("Error: invalid args", false) }
+        val agentId = args.optString("agent", "")
+        val task = args.optString("task", "")
+        val contextInjected = args.optString("context", "")
+        val toolTitle = args.optString("tool_title", "subagent_invoke")
+        if (agentId.isBlank() || task.isBlank()) {
+            return ToolExecutionResult("Error: 'agent' and 'task' are required", false, toolTitle = toolTitle)
+        }
+        val repo = subAgentRepository
+        val provider = currentProvider
+        if (repo == null || provider == null) {
+            return ToolExecutionResult(
+                "Error: sub-agent not available (repository or model provider not ready)",
+                false, toolTitle = toolTitle,
+            )
+        }
+        val systemPrompt = repo.agentPromptFragment(agentId) ?: return ToolExecutionResult(
+            "Error: sub-agent '$agentId' not found or disabled. List available agents with the Sub-Agents screen.",
+            false, toolTitle = toolTitle,
+        )
+
+        val userContent = buildString {
+            append(task)
+            if (contextInjected.isNotBlank()) {
+                append("\n\nAdditional context:\n").append(contextInjected)
+            }
+        }
+        val messages = listOf(LLMMessage(role = LLMMessage.Role.USER, content = userContent))
+
+        val response = try {
+            provider.sendMessage(
+                messages = messages,
+                systemPrompt = systemPrompt,
+                maxTokens = provider.effectiveMaxOutputTokens(provider.model),
+                temperature = null,
+            )
+        } catch (e: Exception) {
+            return ToolExecutionResult(
+                "Sub-agent '$agentId' invocation failed: ${e.message ?: e.javaClass.simpleName}",
+                false, toolTitle = toolTitle,
+            )
+        }
+
+        val text = response.text?.trim()?.takeIf { it.isNotEmpty() }
+            ?: return ToolExecutionResult(
+                "Sub-agent '$agentId' returned an empty response.",
+                false, toolTitle = toolTitle,
+            )
+        return ToolExecutionResult(text, true, toolTitle = toolTitle)
+    }
+
 
     // ─── UI Helpers ──────────────────────────────────────────────────────
 
@@ -8087,7 +8238,19 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
         // turn instead of "after kill app". Cheap: loadAll is a SQLite
         // SELECT + listFiles, no network.
         skillRepository?.reloadFromDisk()
-        val skillFragment = skillRepository?.skillPromptFragment(activeSessionId)
+        val subAgentFragment = _subAgentPromptFragment.value
+        // [T-subagent-skill-subset] When the session is bound to a sub-agent
+        // with an explicit skill allowlist, restrict the disclosed skills to
+        // that subset (the sub-agent "owns" a narrow tool surface instead of
+        // the full global list). An empty allowlist means NO skills; null
+        // (ordinary session) keeps the global list.
+        val skillFragment = if (_subAgentAllowedSkills.value != null) {
+            val allowed = _subAgentAllowedSkills.value.orEmpty()
+            if (allowed.isEmpty()) null
+            else skillRepository?.skillPromptFragmentForSkills(activeSessionId, allowed)
+        } else {
+            skillRepository?.skillPromptFragment(activeSessionId)
+        }
         // [T-mcp-integration-android] Re-read servers.json (the CLI / file
         // browser may have changed it out-of-band) then build the Top-20
         // enabled-MCP disclosure, injected right after the skills fragment.
@@ -8106,6 +8269,10 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
 
         return buildString {
             append(base)
+            if (subAgentFragment != null) {
+                append("\n\n")
+                append(subAgentFragment)
+            }
             if (skillFragment != null) {
                 append("\n\n")
                 append(skillFragment)

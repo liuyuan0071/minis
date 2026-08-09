@@ -13,13 +13,15 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MessageEntity::class,
         CompactMarkerEntity::class,
         WebAppShortcutEntity::class,
+        SubAgentEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
     abstract fun webAppShortcutDao(): WebAppShortcutDao
+    abstract fun subAgentDao(): SubAgentDao
 
     companion object {
         @Volatile
@@ -163,6 +165,35 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Sub-agent stage-2: new `sub_agents` table + a nullable
+         * `sub_agent_id` binding column on sessions. Pure additive — no
+         * existing row is rewritten; sessions without a binding read NULL
+         * and behave exactly as before.
+         */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS sub_agents (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        description TEXT NOT NULL DEFAULT '',
+                        model_id TEXT,
+                        skills_json TEXT NOT NULL DEFAULT '[]',
+                        builtin_tools_json TEXT NOT NULL DEFAULT '[]',
+                        body TEXT NOT NULL DEFAULT '',
+                        source TEXT NOT NULL DEFAULT 'imported',
+                        is_enabled INTEGER NOT NULL DEFAULT 1,
+                        created_at INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("ALTER TABLE sessions ADD COLUMN sub_agent_id TEXT")
+            }
+        }
+
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // sessions: add iOS-parity columns
@@ -200,7 +231,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "minis.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                     .build()
                     .also { INSTANCE = it }
             }

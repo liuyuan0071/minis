@@ -226,8 +226,19 @@ class SkillRepository(private val context: Context) {
      * (bundled > 7-day recent > most-used), matching iOS SkillStore.
      * Returns null when the session has no enabled skills.
      */
-    fun skillPromptFragment(sessionId: String): String? {
+    fun skillPromptFragment(sessionId: String): String? =
+        skillPromptFragmentForSkills(sessionId, null)
+
+    /**
+     * Same as [skillPromptFragment] but restricted to an explicit skill-id
+     * allowlist. Used by sub-agent sessions whose system prompt should only
+     * disclose the sub-agent's permitted skill subset. A null [allowedIds]
+     * keeps the full global list (ordinary-session behaviour); an empty list
+     * yields null (no skills disclosed).
+     */
+    fun skillPromptFragmentForSkills(sessionId: String, allowedIds: List<String>?): String? {
         val enabled = _skills.value.filter { isEnabledForSession(it.id, sessionId) }
+            .filter { allowedIds == null || it.id in allowedIds }
         if (enabled.isEmpty()) return null
 
         val total = enabled.size
