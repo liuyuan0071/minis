@@ -35,6 +35,11 @@ class TerminalSession(private val context: Context) {
     companion object {
         private const val TAG = "TerminalSession"
         private const val READ_BUFFER_SIZE = 8192
+
+        /** Max time to wait for the shell to emit its first byte before the
+         *  boot watchdog kills it. Generous enough for slow translated
+         *  emulators to boot; a real device is unaffected. */
+        private const val SHELL_BOOT_TIMEOUT_MS = 60_000L
         /** Max bytes per PTY write; larger pastes are chunked so nothing is dropped. */
         private const val CHUNK_SIZE = 2048
         const val DEFAULT_COLS = 80
@@ -92,6 +97,9 @@ class TerminalSession(private val context: Context) {
 
     private var masterFd: Int = -1
     private var childPid: Int = 0
+
+    /** Set true once the PTY delivers any byte — used by the boot watchdog. */
+    @Volatile private var sawShellOutput: Boolean = false
     private var readerJob: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -167,6 +175,33 @@ class TerminalSession(private val context: Context) {
 
                 readerJob = scope.launch { readLoop() }
 
+                // Boot watchdog: environments that run the arm64 proot under
+                // ARM→x86 translation (e.g. MuMu/houdini) make the ptrace-heavy
+                // loader crawl so slowly it looks hung, and the shell may never
+                // produce a byte. Don't leave a dead-looking session on screen
+                // forever — after [SHELL_BOOT_TIMEOUT_MS] with zero output, kill
+                // the child and say so. Real devices boot in <2s and are never
+                // affected.
+                sawShellOutput = false
+                scope.launch {
+                    val deadline = System.currentTimeMillis() + SHELL_BOOT_TIMEOUT_MS
+                    while (System.currentTimeMillis() < deadline) {
+                        if (sawShellOutput || childPid <= 0) return@launch
+                        kotlinx.coroutines.delay(200)
+                    }
+                    if (!sawShellOutput && childPid > 0) {
+                        Log.w(TAG, "No shell output within ${SHELL_BOOT_TIMEOUT_MS}ms — killing pid=$childPid")
+                        PtyBridge.sendSignal(childPid, 15) // SIGTERM
+                        _outputBytes.emit(
+                            ("\r\n[Shell produced no output within ${SHELL_BOOT_TIMEOUT_MS / 1000}s — " +
+                                "proot is likely stalled (on emulators it runs under ARM→x86 translation " +
+                                "and ptrace-heavy code is extremely slow). On a real device this boots instantly.\r\n")
+                                .toByteArray()
+                        )
+                        _state.value = State.STOPPED
+                    }
+                }
+
                 // Wait for child exit in a sibling coroutine.
                 scope.launch {
                     val status = PtyBridge.waitFor(childPid)
@@ -193,6 +228,7 @@ class TerminalSession(private val context: Context) {
                 break
             }
             _outputBytes.emit(buf.copyOf(n))
+            sawShellOutput = true
         }
     }
 
