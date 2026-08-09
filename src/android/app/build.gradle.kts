@@ -36,8 +36,8 @@ android {
         applicationId = "com.openminis.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "0.21-fix4"
+        versionCode = 24
+        versionName = "0.21-fix5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -69,7 +69,10 @@ android {
         )
 
         ndk {
-            abiFilters += listOf("arm64-v8a")
+            // arm64-v8a for real phones; x86_64 so desktop emulators (MuMu
+            // etc.) run the sandbox proot NATIVELY instead of translating the
+            // arm64 binary (which stalls on the ptrace-heavy loader).
+            abiFilters += listOf("arm64-v8a", "x86_64")
         }
         // Pin the NDK to a version pre-installed in the Gitee Go build
         // environment (its SDK dir is read-only, so AGP can't auto-install).

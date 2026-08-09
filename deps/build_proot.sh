@@ -29,23 +29,34 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROOT_DIR="$SCRIPT_DIR/proot"
 TALLOC_DIR="$SCRIPT_DIR/talloc"
-BUILD_DIR="$SCRIPT_DIR/build/proot-android"
 ASSETS_DIR="$PROJECT_ROOT/src/android/app/src/main/assets"
-OUTPUT_BIN="$ASSETS_DIR/proot-aarch64"
-# The APK also ships proot as a native library (extracted to
-# app's nativeLibraryDir at install time). Keep both in sync.
-JNILIBS_DIR="$PROJECT_ROOT/src/android/app/src/main/jniLibs/arm64-v8a"
-JNILIBS_BIN="$JNILIBS_DIR/libproot.so"
 
 # talloc version pinned to a known-good release. Single-file build avoids
 # Samba's waf-based build system entirely (we just compile talloc.c).
 TALLOC_VERSION="2.4.2"
 TALLOC_TARBALL_URL="https://download.samba.org/pub/talloc/talloc-${TALLOC_VERSION}.tar.gz"
 
-# Android target. minSdk=26 in src/android/app/build.gradle.kts.
+# Android targets — build proot + loader for BOTH ABIs:
+#   * arm64-v8a (real phones, primary)
+#   * x86_64    (desktop emulators like MuMu run the x86_64 image NATIVELY;
+#                the arm64 binary would otherwise run under ARM→x86
+#                translation where the ptrace-heavy loader crawls and hangs)
+# Format: <abi>:<ndk-triple>:<asset-basename>. minSdk=26 in build.gradle.kts.
+declare -a ANDROID_TARGETS=(
+    "arm64-v8a:aarch64-linux-android:proot-aarch64"
+    "x86_64:x86_64-linux-android:proot-x86_64"
+)
 ANDROID_API=26
-ANDROID_ABI="arm64-v8a"
-NDK_TRIPLE="aarch64-linux-android"
+
+# Per-target variables (assigned by build_target below):
+BUILD_DIR=""
+OUTPUT_BIN=""
+JNILIBS_DIR=""
+JNILIBS_BIN=""
+ANDROID_ABI=""
+NDK_TRIPLE=""
+PROOT_ASSET_BASENAME=""
+FORCE_REBUILD=0
 
 # ----------------------------------------------------------------------------
 # Log helpers
@@ -143,8 +154,8 @@ fetch_talloc() {
 
     log_info "Downloading talloc $TALLOC_VERSION..."
     mkdir -p "$TALLOC_DIR"
-    local tarball="$BUILD_DIR/talloc-${TALLOC_VERSION}.tar.gz"
-    mkdir -p "$BUILD_DIR"
+    local tarball="$SCRIPT_DIR/build/talloc-src/talloc-${TALLOC_VERSION}.tar.gz"
+    mkdir -p "$SCRIPT_DIR/build/talloc-src"
     if [ ! -f "$tarball" ]; then
         # Primary source is download.samba.org; it is occasionally slow or
         # unreachable from CI runners. Ubuntu's archive carries the same
@@ -280,7 +291,7 @@ build_proot() {
         log_info "Disabled talloc_enable_leak_report() (exit noise)"
     fi
 
-    log_info "Building proot (aarch64)..."
+    log_info "Building proot ($ANDROID_ABI)..."
 
     # proot's GNUmakefile has a quirk where `-f <path>` out-of-tree builds
     # double-prefix source paths via $(SRC)$<. Simpler to build in-tree under
@@ -294,9 +305,10 @@ build_proot() {
 
     (
         cd "$PROOT_DIR/src"
-        if [ "$FORCE_REBUILD" = "1" ]; then
-            make clean >/dev/null 2>&1 || true
-        fi
+        # Always clean first: the same in-tree src/ is reused for every ABI,
+        # and make would otherwise reuse .o files compiled for the previous
+        # target's toolchain.
+        make clean >/dev/null 2>&1 || true
 
         make \
             CC="$CC" \
@@ -316,33 +328,18 @@ build_proot() {
 
     "$STRIP" "$built"
 
-    # Sanity-check: ELF aarch64 shared-object (PIE)
-    if ! "$OBJDUMP" -a "$built" | grep -q 'aarch64'; then
-        log_error "Output is not aarch64 ELF"
+    # Sanity-check: ELF of the right machine type (PIE)
+    case "$ANDROID_ABI" in
+        arm64-v8a) ARCH_GREP='aarch64' ;;
+        x86_64)    ARCH_GREP='x86-64' ;;
+        *)         ARCH_GREP='' ;;
+    esac
+    if [ -n "$ARCH_GREP" ] && ! "$OBJDUMP" -a "$built" | grep -q "$ARCH_GREP"; then
+        log_error "Output is not $ANDROID_ABI ELF"
     fi
 
     log_success "proot built: $built ($(du -h "$built" | awk '{print $1}'))"
     BUILT_PROOT="$built"
-
-    # Ship a standalone loader alongside proot. proot's get_loader_path()
-    # honours $PROOT_LOADER BEFORE falling back to its embedded loader, and
-    # the app sets PROOT_LOADER = nativeLibraryDir/libproot-loader.so when the
-    # file exists (PRootKernel.kt). On stock Android the app data dir is
-    # exec-restricted, so the embedded-loader extraction to PROOT_TMP_DIR
-    # fails with EACCES ("Permission denied" right at shell start) — pointing
-    # PROOT_LOADER at a jniLibs entry (nativeLibraryDir is executable, proot
-    # itself runs from there) avoids the temp-file exec entirely. The loader
-    # intermediate is produced by the bundled build too (it is objcopy-wrapped
-    # into proot afterwards).
-    mkdir -p "$JNILIBS_DIR"
-    if [ -f "$PROOT_DIR/src/loader/loader" ]; then
-        install -m 0755 "$PROOT_DIR/src/loader/loader" "$JNILIBS_DIR/libproot-loader.so"
-        log_success "Installed: $JNILIBS_DIR/libproot-loader.so"
-    fi
-    if [ -f "$PROOT_DIR/src/loader/loader-m32" ]; then
-        install -m 0755 "$PROOT_DIR/src/loader/loader-m32" "$JNILIBS_DIR/libproot-loader32.so"
-        log_success "Installed: $JNILIBS_DIR/libproot-loader32.so"
-    fi
 }
 
 # ----------------------------------------------------------------------------
@@ -365,6 +362,25 @@ install_asset() {
     mkdir -p "$JNILIBS_DIR"
     install -m 0755 "$BUILT_PROOT" "$JNILIBS_BIN"
     log_success "Installed: $JNILIBS_BIN ($(du -h "$JNILIBS_BIN" | awk '{print $1}'))"
+
+    # Ship a standalone loader alongside proot. proot's get_loader_path()
+    # honours $PROOT_LOADER BEFORE falling back to its embedded loader, and
+    # the app sets PROOT_LOADER = nativeLibraryDir/libproot-loader.so when the
+    # file exists (PRootKernel.kt). On stock Android the app data dir is
+    # exec-restricted, so the embedded-loader extraction to PROOT_TMP_DIR
+    # fails with EACCES ("Permission denied" right at shell start) — pointing
+    # PROOT_LOADER at a jniLibs entry (nativeLibraryDir is executable, proot
+    # itself runs from there) avoids the temp-file exec entirely. The loader
+    # intermediate is produced by the bundled build too (it is objcopy-wrapped
+    # into proot afterwards).
+    if [ -f "$PROOT_DIR/src/loader/loader" ]; then
+        install -m 0755 "$PROOT_DIR/src/loader/loader" "$JNILIBS_DIR/libproot-loader.so"
+        log_success "Installed: $JNILIBS_DIR/libproot-loader.so"
+    fi
+    if [ -f "$PROOT_DIR/src/loader/loader-m32" ]; then
+        install -m 0755 "$PROOT_DIR/src/loader/loader-m32" "$JNILIBS_DIR/libproot-loader32.so"
+        log_success "Installed: $JNILIBS_DIR/libproot-loader32.so"
+    fi
 }
 
 # ----------------------------------------------------------------------------
@@ -372,7 +388,10 @@ install_asset() {
 # ----------------------------------------------------------------------------
 do_clean() {
     log_info "Cleaning build artifacts..."
-    rm -rf "$BUILD_DIR"
+    for target in "${ANDROID_TARGETS[@]}"; do
+        IFS=':' read -r abi triple asset <<< "$target"
+        rm -rf "$SCRIPT_DIR/build/proot-android-$abi"
+    done
     if [ -d "$PROOT_DIR/src" ]; then
         (cd "$PROOT_DIR/src" && make clean >/dev/null 2>&1 || true)
     fi
@@ -393,13 +412,23 @@ main() {
         *)         log_error "Unknown argument: $1 (expected: clean|distclean)" ;;
     esac
 
-    setup_toolchain
+    # talloc source is arch-independent — fetch/unpack once.
     fetch_talloc
-    build_talloc
-    build_proot
-    install_asset
 
-    log_success "All done. proot binary ready at $OUTPUT_BIN"
+    for target in "${ANDROID_TARGETS[@]}"; do
+        IFS=':' read -r ANDROID_ABI NDK_TRIPLE PROOT_ASSET_BASENAME <<< "$target"
+        BUILD_DIR="$SCRIPT_DIR/build/proot-android-$ANDROID_ABI"
+        OUTPUT_BIN="$ASSETS_DIR/$PROOT_ASSET_BASENAME"
+        JNILIBS_DIR="$PROJECT_ROOT/src/android/app/src/main/jniLibs/$ANDROID_ABI"
+        JNILIBS_BIN="$JNILIBS_DIR/libproot.so"
+        log_info "=== Target: $ANDROID_ABI ($NDK_TRIPLE) → $OUTPUT_BIN ==="
+        setup_toolchain
+        build_talloc
+        build_proot
+        install_asset
+    done
+
+    log_success "All done. proot built for: ${ANDROID_TARGETS[*]}"
 }
 
 main "$@"

@@ -16,17 +16,15 @@ ASSETS_DIR="$PROJECT_ROOT/src/android/app/src/main/assets"
 
 ALPINE_VERSION="3.21"
 ALPINE_RELEASE="3.21.3"
-# Mirror order targets the current CI (GitHub Actions, US runners): the
-# official dl-cdn.alpinelinux.org CDN is fast there, while the CN mirrors
-# (USTC/Tsinghua/Aliyun) are kept as fallbacks for China-based runners
-# (Gitee Go). Per-mirror timeout is short so a dead mirror can't hang the
-# build past the runner's wall-clock limit.
-ALPINE_REL="v${ALPINE_VERSION}/releases/aarch64/alpine-minirootfs-${ALPINE_RELEASE}-aarch64.tar.gz"
-ALPINE_URLS=(
-    "https://dl-cdn.alpinelinux.org/alpine/${ALPINE_REL}"
-    "https://mirrors.ustc.edu.cn/alpine/${ALPINE_REL}"
-    "https://mirrors.tuna.tsinghua.edu.cn/alpine/${ALPINE_REL}"
-    "https://mirrors.aliyun.com/alpine/${ALPINE_REL}"
+# Rootfs archives per device ABI — arm64-v8a (phones) + x86_64 (desktop
+# emulators like MuMu). Both are COMMITTED to the repo; the download below
+# only runs when a file is missing. Mirror order targets the current CI
+# (GitHub Actions, US runners): official dl-cdn first, CN mirrors as
+# fallbacks for China-based runners. Per-mirror timeout is short so a dead
+# mirror can't hang the build past the runner's wall-clock limit.
+ALPINE_ARCH_FILES=(
+    "aarch64:alpine-minirootfs.tar.gz"
+    "x86_64:alpine-minirootfs-x86_64.tar.gz"
 )
 
 # Termux proot package — aarch64 static binary
@@ -46,33 +44,47 @@ TALLOC_DEB_URL="https://packages.termux.dev/apt/termux-main/pool/main/libt/libta
 
 mkdir -p "$ASSETS_DIR"
 
-ROOTFS_FILE="$ASSETS_DIR/alpine-minirootfs.tar.gz"
 PROOT_FILE="$ASSETS_DIR/proot-aarch64"
 JNILIBS_DIR="$PROJECT_ROOT/src/android/app/src/main/jniLibs/arm64-v8a"
 JNILIBS_PROOT="$JNILIBS_DIR/libproot.so"
 
-# --- Alpine rootfs ---
-if [ -f "$ROOTFS_FILE" ]; then
-    echo "✓ Alpine rootfs already exists: $ROOTFS_FILE"
-else
-    echo "Downloading Alpine Linux ${ALPINE_RELEASE} aarch64 minirootfs..."
-    DL_OK=0
-    for url in "${ALPINE_URLS[@]}"; do
+# --- Alpine rootfs (one per ABI) ---
+ensure_rootfs() {
+    local arch="$1"
+    local file="$2"
+    if [ -f "$file" ]; then
+        echo "✓ Alpine rootfs already exists: $file"
+        return 0
+    fi
+    local rel="v${ALPINE_VERSION}/releases/${arch}/alpine-minirootfs-${ALPINE_RELEASE}-${arch}.tar.gz"
+    local urls=(
+        "https://dl-cdn.alpinelinux.org/alpine/${rel}"
+        "https://mirrors.ustc.edu.cn/alpine/${rel}"
+        "https://mirrors.tuna.tsinghua.edu.cn/alpine/${rel}"
+        "https://mirrors.aliyun.com/alpine/${rel}"
+    )
+    echo "Downloading Alpine Linux ${ALPINE_RELEASE} ${arch} minirootfs..."
+    local ok=0
+    for url in "${urls[@]}"; do
         echo "  trying: $url"
-        # --max-time 60 per mirror: a dead mirror must not hang the build and
-        # push it past the runner's wall-clock limit.
-        if curl -fSL --connect-timeout 10 --max-time 60 -o "$ROOTFS_FILE" "$url"; then
-            DL_OK=1
+        # --max-time 60 per mirror: a dead mirror must not hang the build.
+        if curl -fSL --connect-timeout 10 --max-time 60 -o "$file" "$url"; then
+            ok=1
             break
         fi
-        rm -f "$ROOTFS_FILE"
+        rm -f "$file"
     done
-    if [ "$DL_OK" -ne 1 ]; then
-        echo "Error: all Alpine mirror URLs failed" >&2
-        exit 1
+    if [ "$ok" -ne 1 ]; then
+        echo "Error: all Alpine mirror URLs failed for ${arch}" >&2
+        return 1
     fi
-    echo "✓ Downloaded: $ROOTFS_FILE ($(du -h "$ROOTFS_FILE" | cut -f1))"
-fi
+    echo "✓ Downloaded: $file ($(du -h "$file" | cut -f1))"
+}
+
+for entry in "${ALPINE_ARCH_FILES[@]}"; do
+    IFS=':' read -r arch fname <<< "$entry"
+    ensure_rootfs "$arch" "$ASSETS_DIR/$fname" || exit 1
+done
 
 # --- PRoot binary ---
 if [ -f "$PROOT_FILE" ]; then
@@ -264,7 +276,8 @@ else
 fi
 
 # --- Final hard check: never ship a proot that will fail on device ---
-# Two acceptable end states for jniLibs/libproot.so:
+# Runs for EVERY ABI dir present in jniLibs (arm64-v8a for phones, x86_64
+# for desktop emulators). Two acceptable end states for each libproot.so:
 #   (a) static proot (no libtalloc DT_NEEDED) — produced by build_proot.sh
 #   (b) dynamic proot whose DT_NEEDED was rewritten to libtalloc.so, with
 #       libtalloc.so shipped in jniLibs next to it — the patchelf path above
@@ -272,29 +285,35 @@ fi
 # modern Android: the namespace-isolated linker ignores LD_LIBRARY_PATH for
 # exec'd binaries, so only nativeLibraryDir is searched. Fail the build here
 # instead of silently shipping a broken APK.
-echo "=== Final check: proot linkage ==="
-if [ -f "$JNILIBS_PROOT" ]; then
+JNILIBS_BASE="$PROJECT_ROOT/src/android/app/src/main/jniLibs"
+echo "=== Final check: proot linkage (all ABIs) ==="
+for abi_dir in "$JNILIBS_BASE"/*/; do
+    [ -d "$abi_dir" ] || continue
+    local_proot="$abi_dir/libproot.so"
+    [ -f "$local_proot" ] || continue
+    abi_name="$(basename "$abi_dir")"
+    echo "--- $abi_name ---"
     # The app's shell ALWAYS passes --native-offload=<socket>:<handlers>
     # (PRootKernel.kt / PersistentShell.kt / TerminalSession.kt). Stock Termux
     # proot does NOT implement that option and would exit with "unrecognized
     # option" at startup, so verify the OpenMinis fork extension is compiled
     # in — this is what makes the sandbox actually usable.
-    if strings "$JNILIBS_PROOT" 2>/dev/null | grep -q -- '--native-offload'; then
+    if strings "$local_proot" 2>/dev/null | grep -q -- '--native-offload'; then
         echo "OK: proot has the native-offload extension (OpenMinis fork)"
     else
-        echo "ERROR: proot lacks --native-offload (app requires it) — sandbox would fail at startup" >&2
+        echo "ERROR: $abi_name proot lacks --native-offload (app requires it)" >&2
         exit 1
     fi
     if [ "$HAVE_PATCHELF" = "1" ]; then
-        NEEDED=$(patchelf --print-needed "$JNILIBS_PROOT" 2>/dev/null || true)
+        NEEDED=$(patchelf --print-needed "$local_proot" 2>/dev/null || true)
         echo "libproot.so DT_NEEDED: ${NEEDED:-<none/static>}"
         if printf '%s\n' "$NEEDED" | grep -q 'libtalloc\.so\.2'; then
-            echo "ERROR: libproot.so still needs libtalloc.so.2 — would fail on device" >&2
+            echo "ERROR: $abi_name libproot.so still needs libtalloc.so.2" >&2
             exit 1
         fi
         if printf '%s\n' "$NEEDED" | grep -q 'libtalloc\.so'; then
-            if [ ! -f "$JNILIBS_DIR/libtalloc.so" ]; then
-                echo "ERROR: libproot.so needs libtalloc.so but it was not shipped in jniLibs" >&2
+            if [ ! -f "$abi_dir/libtalloc.so" ]; then
+                echo "ERROR: $abi_name libproot.so needs libtalloc.so but it was not shipped" >&2
                 exit 1
             fi
             echo "OK: needs libtalloc.so and it is present in jniLibs"
@@ -302,14 +321,12 @@ if [ -f "$JNILIBS_PROOT" ]; then
             echo "OK: no libtalloc dependency (static build)"
         fi
     else
-        if strings "$JNILIBS_PROOT" 2>/dev/null | grep -q 'libtalloc\.so\.2'; then
-            echo "ERROR: proot needs libtalloc.so.2 and patchelf is unavailable — cannot guarantee a working APK" >&2
+        if strings "$local_proot" 2>/dev/null | grep -q 'libtalloc\.so\.2'; then
+            echo "ERROR: $abi_name proot needs libtalloc.so.2 and patchelf is unavailable" >&2
             exit 1
         fi
     fi
-else
-    echo "WARN: no libproot.so in jniLibs — nothing to verify"
-fi
+done
 
 echo ""
 echo "Assets ready in: $ASSETS_DIR"

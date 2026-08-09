@@ -3,6 +3,7 @@ package com.openminis.app.sandbox
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.LinkProperties
+import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +48,7 @@ class RootfsManager private constructor(private val context: Context) {
 
     val isInstalled: Boolean
         get() = rootfsDir.exists() && archFile.exists() &&
-                archFile.readText().trim() == ARCH
+                archFile.readText().trim() == currentArch
 
     /**
      * Observable install progress. UI layers (OnboardingScreen,
@@ -121,7 +122,7 @@ class RootfsManager private constructor(private val context: Context) {
             _installState.value = RootfsInstallState.Finalizing
 
             // Write arch marker
-            archFile.writeText(ARCH)
+            archFile.writeText(currentArch)
 
             // Pre-create /var/minis directories. Mirrors iOS
             // RootfsManager.swift:76-80 (attachments/offloads/workspace/skills/
@@ -676,9 +677,19 @@ class RootfsManager private constructor(private val context: Context) {
 
     companion object {
         private const val TAG = "RootfsManager"
-        private const val ARCH = "aarch64"
-        private const val ROOTFS_ASSET = "alpine-minirootfs.tar.gz"
-        private const val ROOTFS_ASSET_TAR = "alpine-minirootfs.tar"
+
+        /**
+         * Device ABI family the rootfs asset must match. Real phones are
+         * aarch64; desktop emulators (MuMu etc.) run x86_64 — the sandbox
+         * (proot) is compiled per-ABI and the rootfs must match it.
+         */
+        private val currentArch: String
+            get() = if (Build.SUPPORTED_ABIS.any { it == "x86_64" }) "x86_64" else "aarch64"
+
+        private val ROOTFS_ASSET: String
+            get() = if (currentArch == "x86_64") "alpine-minirootfs-x86_64.tar.gz" else "alpine-minirootfs.tar.gz"
+        private val ROOTFS_ASSET_TAR: String
+            get() = if (currentArch == "x86_64") "alpine-minirootfs-x86_64.tar" else "alpine-minirootfs.tar"
         private const val PROOT_ASSET = "proot-aarch64"
         private const val DEFAULT_MOUNT_ASSET = "default_mount"
 

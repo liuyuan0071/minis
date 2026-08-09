@@ -117,10 +117,12 @@ src/android/app/src/debug/assets/debug-skill/
 # debug symbols). See deps/build_proot.sh, deps/build_lame.sh,
 # deps/prepare_alpine_rootfs.sh and docs for the build order.
 src/android/app/src/main/assets/proot-aarch64
-# Alpine minirootfs is TRACKED (committed) so CI builds don't depend on a
-# mirror download that flakes from GitHub Actions US runners.
+src/android/app/src/main/assets/proot-x86_64
+# Alpine minirootfs archives are TRACKED (committed) so CI builds don't
+# depend on a mirror download that flakes from GitHub Actions US runners.
 # src/android/app/src/main/assets/alpine-minirootfs.tar.gz
-src/android/app/src/main/jniLibs/arm64-v8a/*.so
+# src/android/app/src/main/assets/alpine-minirootfs-x86_64.tar.gz
+src/android/app/src/main/jniLibs/*/*.so
 deps/lame-build/
 deps/lame-3.100/**/.libs/
 
