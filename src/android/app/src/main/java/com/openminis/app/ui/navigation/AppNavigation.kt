@@ -118,6 +118,8 @@ object Routes {
     const val SKILL_DETAIL = "skill/{skillId}"
     const val SKILL_FILE = "skill_file/{skillId}/{relativePath}"
     const val MINIS_SKILLS_BROWSER = "minis_skills_browser"
+    /** [T-subagent-ui] Sub-agent management (list/import/enable/delete/open-as-session). */
+    const val SUB_AGENTS = "sub_agents"
 
     fun skillDetail(skillId: String) = "skill/$skillId"
     fun skillFile(skillId: String, relativePath: String = "SKILL.md"): String {
@@ -577,6 +579,7 @@ fun AppNavigation(
                 onRootfsClick = { navController.safeNavigate(Routes.STORAGE) },
                 onEnvVarsClick = { navController.safeNavigate(Routes.ENV_VARS) },
                 onSkillsClick = { navController.safeNavigate(Routes.SKILLS) },
+                onSubAgentsClick = { navController.safeNavigate(Routes.SUB_AGENTS) },
                 onTerminalClick = { navController.safeNavigate(Routes.terminal()) },
                 onMemoryClick = { navController.safeNavigate(Routes.MEMORY) },
                 onMcpClick = { navController.safeNavigate(Routes.MCP) },
@@ -1047,6 +1050,24 @@ fun AppNavigation(
                 MinisSkillsBrowserScreen(
                     skillRepository = skillRepository,
                     onBack = { navController.safePopBackStack() },
+                )
+            }
+        }
+
+        composable(Routes.SUB_AGENTS) {
+            if (subAgentRepository != null) {
+                SubAgentsScreen(
+                    subAgentRepository = subAgentRepository,
+                    chatRepository = chatRepository,
+                    defaultModelId = try {
+                        providerRepository.resolvedAgentLoopEntries().firstOrNull()?.model?.id ?: ""
+                    } catch (_: Exception) { "" },
+                    onBack = { navController.safePopBackStack() },
+                    onOpenSession = { sessionId ->
+                        navController.safeNavigate(Routes.chat(sessionId)) {
+                            popUpTo(Routes.SUB_AGENTS) { inclusive = false }
+                        }
+                    },
                 )
             }
         }

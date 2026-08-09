@@ -7223,9 +7223,11 @@ class ChatViewModel(
             }
             FileWriteTool.NAME -> FileWriteTool.execute(argsJson, activeSessionId, context).also {
                 if (it.success) maybeReloadSkillsForPath(argsJson)
+                if (it.success) maybeReloadSubAgentsForPath(argsJson)
             }
             FileEditTool.NAME -> FileEditTool.execute(argsJson, activeSessionId, context).also {
                 if (it.success) maybeReloadSkillsForPath(argsJson)
+                if (it.success) maybeReloadSubAgentsForPath(argsJson)
             }
             // T178: pass sessionId + context so read_image routes through
             // resolveSessionHostPath like file_read/write/edit do — without
@@ -7253,6 +7255,21 @@ class ChatViewModel(
             val path = JSONObject(argsJson).optString("path", "")
             if (path.contains("/skills/") && path.endsWith("SKILL.md")) {
                 skillRepository?.reloadFromDisk()
+            }
+        }
+    }
+
+    /**
+     * [T-subagent-session] Mirrors [maybeReloadSkillsForPath] for sub-agents:
+     * when the agent writes/edits an `.md` under `/var/minis/agents/`, re-scan
+     * the agents dir so a session-generated sub-agent is registered immediately.
+     */
+    private fun maybeReloadSubAgentsForPath(argsJson: String) {
+        runCatching {
+            val path = JSONObject(argsJson).optString("path", "")
+            if (path.contains("/agents/") && path.endsWith(".md")) {
+                val repo = subAgentRepository ?: return
+                viewModelScope.launch { repo.reloadFromDisk() }
             }
         }
     }

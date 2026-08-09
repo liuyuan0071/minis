@@ -20,6 +20,10 @@ class ChatRepository(internal val dao: ChatDao) {
         // here; existing call sites that omit it keep the prior
         // memoryEnabled=1 behavior (legacy default).
         memoryEnabled: Boolean = true,
+        // [T-subagent-session] Bind the new session to a sub-agent so the
+        // agent loop runs it as that specialist (system prompt override +
+        // skill/tool subset + model override). null = ordinary session.
+        subAgentId: String? = null,
     ): ChatSessionEntity {
         val now = System.currentTimeMillis()
         val session = ChatSessionEntity(
@@ -29,6 +33,7 @@ class ChatRepository(internal val dao: ChatDao) {
             createdAt = now,
             updatedAt = now,
             memoryEnabled = if (memoryEnabled) 1 else 0,
+            subAgentId = subAgentId,
         )
         dao.insertSession(session)
         return session

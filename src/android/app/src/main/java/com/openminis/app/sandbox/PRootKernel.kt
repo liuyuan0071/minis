@@ -216,7 +216,11 @@ object PRootKernel {
         // [T-mcp-integration-android] mcp-servers is global (like memory/skills):
         // binding it here makes the in-PRoot minis-mcp-cli read/write the SAME
         // servers.json the Android Settings UI does (host: minis-global/mcp-servers).
-        listOf("memory", "skills", "shared", "mcp-servers").forEach { subdir ->
+        // [T-subagent-session] agents: sub-agent md files live at
+        // minis-global/agents/ on the host, mirrored into the sandbox as
+        // /var/minis/agents/ so a session-generated agent (file_write of a
+        // .md) is picked up by SubAgentRepository.reloadFromDisk().
+        listOf("memory", "skills", "shared", "mcp-servers", "agents").forEach { subdir ->
             val hostDir = File(globalBase, subdir).also { it.mkdirs() }
             bindMounts["/var/minis/$subdir"] = hostDir.absolutePath
         }

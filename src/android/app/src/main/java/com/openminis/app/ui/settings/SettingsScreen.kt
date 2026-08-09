@@ -77,6 +77,8 @@ fun SettingsScreen(
     onRootfsClick: () -> Unit = {},
     onEnvVarsClick: () -> Unit = {},
     onSkillsClick: () -> Unit = {},
+    // [T-subagent-ui] Sub-Agents management entry, directly below Skills.
+    onSubAgentsClick: () -> Unit = {},
     onTerminalClick: () -> Unit = {},
     onMemoryClick: () -> Unit = {},
     // [T-mcp-integration-android] MCP Integrations page, listed directly below
@@ -177,6 +179,14 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_skills),
                     subtitle = stringResource(R.string.settings_skills_subtitle),
                     onClick = onSkillsClick,
+                )
+                // [T-subagent-ui] Sub-Agents management — below Skills.
+                SettingsItem(
+                    icon = Icons.Outlined.SmartToy,
+                    iconColor = Color(0xFF7C3AED),
+                    title = "子代理",
+                    subtitle = "专家角色：独立指令与技能子集，可在会话中召唤",
+                    onClick = onSubAgentsClick,
                 )
                 // [T-soul-md] insertion between Skills and Memory per spec.
                 SettingsItem(

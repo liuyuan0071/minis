@@ -10,7 +10,7 @@ import org.json.JSONArray
 import java.io.File
 
 /**
- * Manages sub-agent definitions (Claude Code `.claude/agents/*.md` shape).
+ * Manages sub-agent definitions (Claude Code `.claude/agents` markdown shape).
  *
  * Architecture mirrors SkillRepository:
  *   - The markdown file is the single source of truth on disk at

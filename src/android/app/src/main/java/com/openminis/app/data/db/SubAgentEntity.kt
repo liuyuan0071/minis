@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * A sub-agent definition (Claude Code `.claude/agents/*.md` shape).
+ * A sub-agent definition (Claude Code `.claude/agents` markdown shape).
  *
  * The markdown body (YAML frontmatter + instructions) is stored on disk at
  * `filesDir/minis-global/agents/<name>.md` (single source of truth, mirroring
